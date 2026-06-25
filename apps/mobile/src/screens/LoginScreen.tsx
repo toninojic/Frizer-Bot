@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import type { PressableStateCallbackType } from 'react-native';
 
 type LoginScreenProps = {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -76,7 +77,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           <Pressable
             disabled={loading}
             onPress={handleLogin}
-            style={({ pressed }) => [
+            style={({ pressed }: PressableStateCallbackType) => [
               styles.button,
               pressed || loading ? styles.buttonPressed : null,
             ]}
