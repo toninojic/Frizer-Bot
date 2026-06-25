@@ -1,0 +1,11 @@
+node_modules
+apps/*/node_modules
+packages/*/node_modules
+dist
+apps/api/dist
+.expo
+apps/mobile/.expo
+.git
+.env
+apps/api/.env
+npm-debug.log*

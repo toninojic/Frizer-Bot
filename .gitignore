@@ -1,0 +1,29 @@
+node_modules/
+apps/*/node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.env
+.env.local
+
+# API
+apps/api/.env
+apps/api/dist/
+
+# Expo
+.expo/
+apps/mobile/.expo/
+apps/mobile/node_modules/
+apps/mobile/web-build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

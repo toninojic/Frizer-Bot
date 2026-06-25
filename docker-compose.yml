@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: salon-ai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: salon_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d salon_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    profiles:
+      - api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: salon-ai-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/salon_ai?schema=public
+      PORT: 4000
+      NODE_ENV: development
+      PUBLIC_WEBHOOK_BASE_URL: ""
+      JWT_SECRET: change-me-in-local-development
+      JWT_EXPIRES_IN: 7d
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
