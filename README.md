@@ -168,7 +168,7 @@ curl -X POST http://localhost:4000/auth/login \
 ## Start Backend
 
 ```bash
-npm run dev:api
+npm run api:dev
 ```
 
 Health check:
@@ -189,7 +189,7 @@ Expected response:
 ## Start Expo
 
 ```bash
-npm run dev:mobile
+npm run start
 ```
 
 The app opens on the login screen. It stores the JWT with `expo-secure-store`, calls `/auth/me`, then loads the salon dashboard shell.

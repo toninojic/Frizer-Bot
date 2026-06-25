@@ -8,6 +8,8 @@
   ],
   "scripts": {
     "dev": "concurrently -n api,mobile -c cyan,magenta \"npm run dev:api\" \"npm run dev:mobile\"",
+    "api:dev": "npm --workspace @ai-salon/api run start:dev",
+    "start": "npm --workspace @ai-salon/mobile run start",
     "dev:api": "npm --workspace @ai-salon/api run start:dev",
     "dev:mobile": "npm --workspace @ai-salon/mobile run start",
     "db:migrate": "npm --workspace @ai-salon/api run db:migrate",
