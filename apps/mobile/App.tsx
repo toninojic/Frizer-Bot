@@ -9,14 +9,28 @@ import {
 } from './src/auth/tokenStorage';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
+import { ServicesScreen } from './src/screens/ServicesScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { TimeBlocksScreen } from './src/screens/TimeBlocksScreen';
+import { TodayScreen } from './src/screens/TodayScreen';
+import { WorkersScreen } from './src/screens/WorkersScreen';
+import { WorkingHoursScreen } from './src/screens/WorkingHoursScreen';
+
+type DashboardScreen =
+  | 'home'
+  | 'today'
+  | 'services'
+  | 'workers'
+  | 'workingHours'
+  | 'timeBlocks'
+  | 'settings';
 
 export default function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [salon, setSalon] = useState<SalonSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [screen, setScreen] = useState<'home' | 'settings'>('home');
+  const [screen, setScreen] = useState<DashboardScreen>('home');
 
   async function resetSession() {
     await clearStoredAccessToken();
@@ -83,17 +97,45 @@ export default function App() {
       </SafeAreaView>
     );
   } else if (accessToken && user && salon) {
-    content =
-      screen === 'settings' ? (
-        <SettingsScreen salon={salon} onBack={() => setScreen('home')} />
-      ) : (
-        <HomeScreen
-          onLogout={resetSession}
-          onOpenSettings={() => setScreen('settings')}
-          salon={salon}
-          user={user}
-        />
-      );
+    const api = clientForToken(accessToken);
+    const backHome = () => setScreen('home');
+
+    switch (screen) {
+      case 'today':
+        content = <TodayScreen onBack={backHome} />;
+        break;
+      case 'services':
+        content = <ServicesScreen api={api} onBack={backHome} />;
+        break;
+      case 'workers':
+        content = <WorkersScreen api={api} onBack={backHome} />;
+        break;
+      case 'workingHours':
+        content = <WorkingHoursScreen api={api} onBack={backHome} />;
+        break;
+      case 'timeBlocks':
+        content = <TimeBlocksScreen api={api} onBack={backHome} />;
+        break;
+      case 'settings':
+        content = <SettingsScreen salon={salon} onBack={backHome} />;
+        break;
+      case 'home':
+      default:
+        content = (
+          <HomeScreen
+            onLogout={resetSession}
+            onOpenServices={() => setScreen('services')}
+            onOpenSettings={() => setScreen('settings')}
+            onOpenTimeBlocks={() => setScreen('timeBlocks')}
+            onOpenToday={() => setScreen('today')}
+            onOpenWorkers={() => setScreen('workers')}
+            onOpenWorkingHours={() => setScreen('workingHours')}
+            salon={salon}
+            user={user}
+          />
+        );
+        break;
+    }
   }
 
   return (

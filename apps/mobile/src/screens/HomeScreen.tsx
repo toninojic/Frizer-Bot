@@ -1,6 +1,7 @@
 import {
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -10,6 +11,11 @@ import { AuthUser, SalonSettings } from '../api/client';
 type HomeScreenProps = {
   user: AuthUser;
   salon: SalonSettings;
+  onOpenServices: () => void;
+  onOpenWorkers: () => void;
+  onOpenWorkingHours: () => void;
+  onOpenTimeBlocks: () => void;
+  onOpenToday: () => void;
   onOpenSettings: () => void;
   onLogout: () => void;
 };
@@ -17,6 +23,11 @@ type HomeScreenProps = {
 export function HomeScreen({
   user,
   salon,
+  onOpenServices,
+  onOpenWorkers,
+  onOpenWorkingHours,
+  onOpenTimeBlocks,
+  onOpenToday,
   onOpenSettings,
   onLogout,
 }: HomeScreenProps) {
@@ -24,7 +35,7 @@ export function HomeScreen({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.topBar}>
           <View>
             <Text style={styles.kicker}>Signed in as {user.role}</Text>
@@ -49,12 +60,17 @@ export function HomeScreen({
         </View>
 
         <View style={styles.actions}>
-          <DashboardButton label="Today" />
-          <DashboardButton label="Services" />
-          <DashboardButton label="Workers" />
+          <DashboardButton label="Today" onPress={onOpenToday} />
+          <DashboardButton label="Services" onPress={onOpenServices} />
+          <DashboardButton label="Workers" onPress={onOpenWorkers} />
+          <DashboardButton
+            label="Working Hours"
+            onPress={onOpenWorkingHours}
+          />
+          <DashboardButton label="Blocked Time" onPress={onOpenTimeBlocks} />
           <DashboardButton label="Settings" onPress={onOpenSettings} />
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -79,9 +95,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f7f7f4',
   },
   container: {
-    flex: 1,
     gap: 18,
     padding: 20,
+    paddingBottom: 32,
   },
   topBar: {
     alignItems: 'center',
@@ -165,8 +181,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#ebe7dc',
     borderRadius: 8,
+    flexBasis: '47%',
+    flexGrow: 1,
     minHeight: 48,
-    minWidth: '47%',
     justifyContent: 'center',
     paddingHorizontal: 14,
   },

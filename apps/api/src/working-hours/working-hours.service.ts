@@ -1,16 +1,49 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { DayOfWeek } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReplaceWorkingHoursDto, WorkingHourDto } from './dto/replace-working-hours.dto';
+
+const orderedDays: DayOfWeek[] = [
+  DayOfWeek.MONDAY,
+  DayOfWeek.TUESDAY,
+  DayOfWeek.WEDNESDAY,
+  DayOfWeek.THURSDAY,
+  DayOfWeek.FRIDAY,
+  DayOfWeek.SATURDAY,
+  DayOfWeek.SUNDAY,
+];
+
+type WorkingHourRecord = {
+  id: string;
+  dayOfWeek: DayOfWeek;
+  opensAt: string | null;
+  closesAt: string | null;
+  isClosed: boolean;
+};
 
 @Injectable()
 export class WorkingHoursService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAllForSalon(salonId: string) {
-    return this.prisma.workingHour.findMany({
+  async findAllForSalon(salonId: string) {
+    const workingHours = await this.prisma.workingHour.findMany({
       where: { salonId },
-      orderBy: { dayOfWeek: 'asc' },
+      select: {
+        id: true,
+        dayOfWeek: true,
+        opensAt: true,
+        closesAt: true,
+        isClosed: true,
+      },
     });
+
+    return workingHours
+      .map((workingHour) => this.toWorkingHourResponse(workingHour))
+      .sort(
+        (first, second) =>
+          orderedDays.indexOf(first.dayOfWeek) -
+          orderedDays.indexOf(second.dayOfWeek),
+      );
   }
 
   async replaceForSalon(salonId: string, dto: ReplaceWorkingHoursDto) {
@@ -47,7 +80,7 @@ export class WorkingHoursService {
   private normalize(hours: WorkingHourDto[]) {
     const seenDays = new Set<string>();
 
-    return hours.map((workingHour) => {
+    const normalizedHours = hours.map((workingHour) => {
       if (seenDays.has(workingHour.dayOfWeek)) {
         throw new BadRequestException(
           `Duplicate working hours for ${workingHour.dayOfWeek}`,
@@ -78,5 +111,25 @@ export class WorkingHoursService {
 
       return workingHour;
     });
+
+    const missingDays = orderedDays.filter((day) => !seenDays.has(day));
+
+    if (missingDays.length > 0) {
+      throw new BadRequestException(
+        `Missing working hours for ${missingDays.join(', ')}`,
+      );
+    }
+
+    return normalizedHours;
+  }
+
+  private toWorkingHourResponse(workingHour: WorkingHourRecord) {
+    return {
+      id: workingHour.id,
+      dayOfWeek: workingHour.dayOfWeek,
+      opensAt: workingHour.opensAt,
+      closesAt: workingHour.closesAt,
+      isClosed: workingHour.isClosed,
+    };
   }
 }

@@ -146,6 +146,10 @@ DELETE /dashboard/services/:id
 GET    /dashboard/working-hours
 PUT    /dashboard/working-hours
 
+GET    /dashboard/time-blocks
+POST   /dashboard/time-blocks
+DELETE /dashboard/time-blocks/:id
+
 GET    /dashboard/customers
 POST   /dashboard/customers
 PATCH  /dashboard/customers/:id
@@ -199,6 +203,54 @@ For local API connections:
 - Expo web can use `EXPO_PUBLIC_API_BASE_URL=http://localhost:4000`
 - Physical devices should use your computer LAN IP, for example `http://192.168.1.20:4000`
 - ngrok can be used by setting `EXPO_PUBLIC_API_BASE_URL` to the ngrok URL
+
+Run Expo web directly:
+
+```bash
+npm run web
+```
+
+## Dashboard Screens
+
+After login, the salon owner can navigate between:
+
+- Today
+- Services
+- Workers
+- Working Hours
+- Blocked Time
+- Settings
+
+The Today screen is a placeholder for the future appointments phase. Services, Workers, Working Hours, and Blocked Time are functional MVP configuration screens for the future Booking Engine.
+
+## Managing Workers
+
+The Workers screen lists active workers first and keeps inactive workers visible so they can be reactivated. The owner can add a worker, edit the worker name, deactivate a worker, or reactivate a worker.
+
+Worker delete actions are soft deletes. The API sets `isActive=false` instead of removing the row, so historical appointments and future audit data can still reference the worker.
+
+## Managing Services
+
+The Services screen lets the owner add, edit, deactivate, and reactivate services. Each service has:
+
+- name
+- duration in minutes
+- optional positive price
+- active/inactive status
+
+Service durations are required because future slot finding will use them to calculate appointment end times and available openings.
+
+## Working Hours
+
+The Working Hours screen stores opening hours for Monday through Sunday. Each day can be marked closed, or configured with `HH:mm` open and close times.
+
+Future Booking Engine logic will use these weekly hours as the salon's baseline availability before checking appointments and time blocks.
+
+## Blocked Time
+
+The Blocked Time screen stores upcoming unavailable periods. A block can apply to the whole salon or to one worker.
+
+Examples include breaks, vacations, holidays, private appointments, and manual blocked time. Future Booking Engine logic will use these records to remove unavailable intervals from bookable slots.
 
 ## Run Everything
 
