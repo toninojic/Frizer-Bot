@@ -44,3 +44,30 @@ export type DashboardTimeBlock = {
   startAt: string;
   endAt: string;
 };
+
+export type DashboardAppointmentStatus = 'BOOKED' | 'CANCELLED' | 'COMPLETED';
+
+export type DashboardAppointment = {
+  id: string;
+  salonId: string;
+  workerId: string;
+  customerId: string;
+  serviceId: string;
+  customerName: string;
+  customerPhone: string;
+  serviceName: string;
+  workerName: string;
+  startAt: string;
+  endAt: string;
+  status: DashboardAppointmentStatus;
+  channel: 'MANUAL' | 'PHONE' | 'WHATSAPP' | 'INSTAGRAM';
+  notes: string | null;
+};
+
+export type BookingAvailableSlot = {
+  workerId: string;
+  workerName: string;
+  startAt: string;
+  endAt: string;
+  label: string;
+};

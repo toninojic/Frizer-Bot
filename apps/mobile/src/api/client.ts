@@ -66,6 +66,35 @@ export type TimeBlock = {
   endAt: string;
 };
 
+export type AppointmentStatus = 'BOOKED' | 'CANCELLED' | 'COMPLETED';
+
+export type BookingChannel = 'MANUAL' | 'PHONE' | 'WHATSAPP' | 'INSTAGRAM';
+
+export type Appointment = {
+  id: string;
+  salonId: string;
+  workerId: string;
+  customerId: string;
+  serviceId: string;
+  customerName: string;
+  customerPhone: string;
+  serviceName: string;
+  workerName: string;
+  startAt: string;
+  endAt: string;
+  status: AppointmentStatus;
+  channel: BookingChannel;
+  notes: string | null;
+};
+
+export type AvailableSlot = {
+  workerId: string;
+  workerName: string;
+  startAt: string;
+  endAt: string;
+  label: string;
+};
+
 type ApiClientOptions = {
   getAccessToken: () => string | null;
   onUnauthorized: () => void | Promise<void>;
@@ -224,7 +253,70 @@ export function createApiClient(options: ApiClientOptions) {
         method: 'DELETE',
       });
     },
+    appointments(filters: { date?: string; from?: string; to?: string } = {}) {
+      return request<Appointment[]>(
+        `/dashboard/appointments${queryString(filters)}`,
+      );
+    },
+    availableSlots(filters: {
+      serviceId: string;
+      workerId?: string;
+      date: string;
+      preferredTimeFrom?: string;
+      preferredTimeTo?: string;
+      limit?: number;
+    }) {
+      return request<{ slots: AvailableSlot[] }>(
+        `/dashboard/booking/available-slots${queryString(filters)}`,
+      );
+    },
+    bookAppointment(body: {
+      workerId: string;
+      serviceId: string;
+      customerName: string;
+      customerPhone: string;
+      startAt: string;
+      channel?: BookingChannel;
+    }) {
+      return request<Appointment>('/dashboard/booking/book', {
+        method: 'POST',
+        body,
+      });
+    },
+    cancelBooking(body: { appointmentId: string; reason?: string }) {
+      return request<Appointment>('/dashboard/booking/cancel', {
+        method: 'POST',
+        body,
+      });
+    },
+    rescheduleBooking(body: {
+      appointmentId: string;
+      newStartAt: string;
+      workerId?: string;
+    }) {
+      return request<Appointment>('/dashboard/booking/reschedule', {
+        method: 'POST',
+        body,
+      });
+    },
   };
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;
+
+function queryString(params: Record<string, string | number | undefined>) {
+  const entries = Object.entries(params).filter(
+    ([, value]) => value !== undefined && value !== '',
+  );
+
+  if (entries.length === 0) {
+    return '';
+  }
+
+  return `?${entries
+    .map(
+      ([key, value]) =>
+        `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
+    )
+    .join('&')}`;
+}

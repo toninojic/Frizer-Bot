@@ -102,7 +102,7 @@ export default function App() {
 
     switch (screen) {
       case 'today':
-        content = <TodayScreen onBack={backHome} />;
+        content = <TodayScreen api={api} onBack={backHome} />;
         break;
       case 'services':
         content = <ServicesScreen api={api} onBack={backHome} />;

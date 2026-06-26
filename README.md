@@ -155,11 +155,25 @@ POST   /dashboard/customers
 PATCH  /dashboard/customers/:id
 
 GET    /dashboard/appointments
+GET    /dashboard/appointments?date=2026-06-26
+GET    /dashboard/appointments?from=2026-06-26&to=2026-06-30
 POST   /dashboard/appointments
 PATCH  /dashboard/appointments/:id/cancel
+
+GET    /dashboard/booking/available-slots
+POST   /dashboard/booking/book
+POST   /dashboard/booking/cancel
+POST   /dashboard/booking/reschedule
+
+POST   /booking/available-slots
+POST   /booking/book
+POST   /booking/cancel
+POST   /booking/reschedule
 ```
 
 Manual appointment creation finds or creates a customer by phone within the salon, snapshots customer/service/worker names, defaults `status` to `BOOKED`, defaults `channel` to `MANUAL`, and calculates `endAt` from the service duration when `endAt` is omitted.
+
+Manual appointment creation now goes through the central Booking Engine, so dashboard bookings use the same working-hours, blocked-time, and appointment-conflict checks as future AI/Twilio/WhatsApp/Instagram channels.
 
 Quick login test:
 
@@ -221,7 +235,7 @@ After login, the salon owner can navigate between:
 - Blocked Time
 - Settings
 
-The Today screen is a placeholder for the future appointments phase. Services, Workers, Working Hours, and Blocked Time are functional MVP configuration screens for the future Booking Engine.
+The Today screen lists booked appointments for the selected date, supports cancelling booked appointments, and includes a New Appointment flow powered by the central Booking Engine. Services, Workers, Working Hours, and Blocked Time are functional MVP configuration screens for booking rules.
 
 ## Managing Workers
 
@@ -251,6 +265,49 @@ Future Booking Engine logic will use these weekly hours as the salon's baseline 
 The Blocked Time screen stores upcoming unavailable periods. A block can apply to the whole salon or to one worker.
 
 Examples include breaks, vacations, holidays, private appointments, and manual blocked time. Future Booking Engine logic will use these records to remove unavailable intervals from bookable slots.
+
+## Booking Engine
+
+The central Booking Engine lives in the NestJS API and owns booking rules for every channel. Expo dashboard screens, future Twilio calls, WhatsApp, Instagram DM, and web booking should call this engine instead of implementing their own availability logic.
+
+It currently handles:
+
+- finding available slots with 10 minute granularity
+- salon timezone and weekly working hours
+- closed days
+- active worker and active service validation
+- existing booked appointment conflicts
+- worker-specific and whole-salon time blocks
+- past-slot rejection
+- safe manual booking with customer upsert and snapshots
+- safe cancellation without deleting appointments
+- safe rescheduling while ignoring the appointment being moved
+
+Protected dashboard routes infer `salonId` from the JWT. The `/booking/*` routes currently require an explicit `salonId` in the request body so future channels can be wired in later with channel-specific auth.
+
+Available slots example:
+
+```json
+{
+  "serviceId": "...",
+  "workerId": "...",
+  "date": "2026-06-26",
+  "limit": 3
+}
+```
+
+Booking example:
+
+```json
+{
+  "workerId": "...",
+  "serviceId": "...",
+  "customerName": "Marko",
+  "customerPhone": "+381641234567",
+  "startAt": "2026-06-26T14:30:00.000Z",
+  "channel": "MANUAL"
+}
+```
 
 ## Run Everything
 
@@ -282,4 +339,4 @@ For day-to-day development, running Postgres in Docker and the API locally is si
 
 `PUBLIC_WEBHOOK_BASE_URL` is already part of the backend environment. Later, ngrok can provide this URL for Twilio webhook testing without changing the backend config shape.
 
-AI, Twilio, WhatsApp, Instagram, payments, conflict detection, slot finding, and production deployment are intentionally not implemented in this phase.
+AI, Twilio, WhatsApp, Instagram, payments, and production deployment are intentionally not implemented in this phase.

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { AuthModule } from './auth/auth.module';
+import { BookingEngineModule } from './booking-engine/booking-engine.module';
 import configuration from './config/configuration';
 import { CustomersModule } from './customers/customers.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -22,6 +23,7 @@ import { WorkingHoursModule } from './working-hours/working-hours.module';
     PrismaModule,
     HealthModule,
     AuthModule,
+    BookingEngineModule,
     DashboardModule,
     SalonsModule,
     WorkersModule,

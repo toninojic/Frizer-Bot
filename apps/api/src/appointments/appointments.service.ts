@@ -1,112 +1,122 @@
 import {
   BadRequestException,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import { AppointmentStatus, BookingChannel } from '@prisma/client';
+import { DateTime } from 'luxon';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
+
+const DEFAULT_TIMEZONE = 'Europe/Belgrade';
+
+type AppointmentFilters = {
+  date?: string;
+  from?: string;
+  to?: string;
+};
+
+type AppointmentRecord = {
+  id: string;
+  salonId: string;
+  workerId: string;
+  customerId: string;
+  serviceId: string;
+  customerNameSnapshot: string;
+  customerPhoneSnapshot: string;
+  serviceNameSnapshot: string;
+  workerNameSnapshot: string;
+  startAt: Date;
+  endAt: Date;
+  status: AppointmentStatus;
+  channel: BookingChannel;
+  notes: string | null;
+};
 
 @Injectable()
 export class AppointmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAllForSalon(salonId: string) {
-    return this.prisma.appointment.findMany({
-      where: { salonId },
-      include: {
-        worker: true,
-        customer: true,
-        service: true,
+  async findAllForSalon(salonId: string, filters: AppointmentFilters = {}) {
+    const dateRange = await this.toDateRange(salonId, filters);
+    const appointments = await this.prisma.appointment.findMany({
+      where: {
+        salonId,
+        startAt: dateRange
+          ? {
+              gte: dateRange.from,
+              lte: dateRange.to,
+            }
+          : undefined,
       },
       orderBy: { startAt: 'asc' },
     });
+
+    return appointments.map((appointment) =>
+      this.toAppointmentResponse(appointment),
+    );
   }
 
-  async create(salonId: string, dto: CreateAppointmentDto) {
-    const startAt = new Date(dto.startAt);
-    const worker = await this.prisma.worker.findFirst({
+  private async toDateRange(salonId: string, filters: AppointmentFilters) {
+    if (!filters.date && !filters.from && !filters.to) {
+      return null;
+    }
+
+    const salon = await this.prisma.salon.findFirst({
       where: {
-        id: dto.workerId,
-        salonId,
-        isActive: true,
+        id: salonId,
+      },
+      select: {
+        timezone: true,
       },
     });
 
-    if (!worker) {
-      throw new NotFoundException('Worker not found for salon');
+    const timezone = salon?.timezone || DEFAULT_TIMEZONE;
+
+    if (filters.date) {
+      const date = DateTime.fromISO(filters.date, { zone: timezone });
+
+      if (!date.isValid) {
+        throw new BadRequestException('INVALID_DATE');
+      }
+
+      return {
+        from: date.startOf('day').toJSDate(),
+        to: date.endOf('day').toJSDate(),
+      };
     }
 
-    const service = await this.prisma.service.findFirst({
-      where: {
-        id: dto.serviceId,
-        salonId,
-        isActive: true,
-      },
-    });
+    const from = filters.from
+      ? DateTime.fromISO(filters.from, { zone: timezone }).startOf('day')
+      : DateTime.fromMillis(0, { zone: timezone });
+    const to = filters.to
+      ? DateTime.fromISO(filters.to, { zone: timezone }).endOf('day')
+      : DateTime.now().setZone(timezone).plus({ years: 1 }).endOf('day');
 
-    if (!service) {
-      throw new NotFoundException('Service not found for salon');
+    if (!from.isValid || !to.isValid || to < from) {
+      throw new BadRequestException('INVALID_DATE_RANGE');
     }
 
-    const endAt = dto.endAt
-      ? new Date(dto.endAt)
-      : new Date(startAt.getTime() + service.durationMinutes * 60_000);
-
-    if (endAt <= startAt) {
-      throw new BadRequestException('endAt must be after startAt');
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      const customer = await tx.customer.upsert({
-        where: {
-          salonId_phone: {
-            salonId,
-            phone: dto.customerPhone,
-          },
-        },
-        update: {
-          name: dto.customerName,
-        },
-        create: {
-          salonId,
-          name: dto.customerName,
-          phone: dto.customerPhone,
-        },
-      });
-
-      return tx.appointment.create({
-        data: {
-          salonId,
-          workerId: worker.id,
-          customerId: customer.id,
-          serviceId: service.id,
-          customerNameSnapshot: customer.name,
-          customerPhoneSnapshot: customer.phone,
-          serviceNameSnapshot: service.name,
-          workerNameSnapshot: worker.name,
-          startAt,
-          endAt,
-          status: AppointmentStatus.BOOKED,
-          channel: dto.channel ?? BookingChannel.MANUAL,
-          notes: dto.notes,
-        },
-      });
-    });
+    return {
+      from: from.toJSDate(),
+      to: to.toJSDate(),
+    };
   }
 
-  async cancel(salonId: string, id: string) {
-    const result = await this.prisma.appointment.updateMany({
-      where: { id, salonId },
-      data: { status: AppointmentStatus.CANCELLED },
-    });
-
-    if (result.count === 0) {
-      throw new NotFoundException('Appointment not found');
-    }
-
-    return this.prisma.appointment.findFirst({
-      where: { id, salonId },
-    });
+  private toAppointmentResponse(appointment: AppointmentRecord) {
+    return {
+      id: appointment.id,
+      salonId: appointment.salonId,
+      workerId: appointment.workerId,
+      customerId: appointment.customerId,
+      serviceId: appointment.serviceId,
+      customerName: appointment.customerNameSnapshot,
+      customerPhone: appointment.customerPhoneSnapshot,
+      serviceName: appointment.serviceNameSnapshot,
+      workerName: appointment.workerNameSnapshot,
+      startAt: appointment.startAt.toISOString(),
+      endAt: appointment.endAt.toISOString(),
+      status: appointment.status,
+      channel: appointment.channel,
+      notes: appointment.notes,
+    };
   }
 }
