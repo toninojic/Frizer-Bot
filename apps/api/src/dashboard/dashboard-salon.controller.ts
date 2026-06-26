@@ -29,6 +29,16 @@ export class DashboardSalonController {
     return this.dashboardSalonService.findSettings(user.salonId);
   }
 
+  @Get('today')
+  findToday(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboardSalonService.findToday(user.salonId);
+  }
+
+  @Get('calls/recent')
+  findRecentCalls(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboardSalonService.findRecentCalls(user.salonId);
+  }
+
   @Patch('salon-settings')
   updateSettings(
     @CurrentUser() user: AuthenticatedUser,

@@ -1,72 +1,59 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { Clock, History, Plus, ShieldOff } from 'lucide-react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type {
   ApiClient,
   Appointment,
-  AvailableSlot,
-  Service,
-  Worker,
+  AuthUser,
+  RecentCall,
+  SalonSettings,
+  TodaySummary,
 } from '../api/client';
-import {
-  DashboardButton,
-  DashboardCard,
-  DashboardField,
-  DashboardLayout,
-  DashboardNotice,
-  dashboardColors,
-} from './dashboardUi';
+import { AppHeader } from '../components/AppHeader';
+import { AppScreen } from '../components/AppScreen';
+import { AppointmentCard } from '../components/AppointmentCard';
+import { Card } from '../components/Card';
+import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
+import { QuickActionCard } from '../components/QuickActionCard';
+import { SectionHeader } from '../components/SectionHeader';
+import { StatCard } from '../components/StatCard';
+import { theme } from '../theme/theme';
+import { formatTime } from '../utils/date';
+import { errorMessage } from '../utils/formatting';
 
 type TodayScreenProps = {
   api: ApiClient;
-  onBack: () => void;
+  salon: SalonSettings;
+  user: AuthUser;
+  onOpenAdd: () => void;
+  onOpenTimeBlocks: () => void;
+  onOpenAppointment: (appointmentId: string) => void;
 };
 
-type BookingForm = {
-  serviceId: string;
-  workerId: string;
-  date: string;
-  customerName: string;
-  customerPhone: string;
-};
-
-export function TodayScreen({ api, onBack }: TodayScreenProps) {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
-  const [workers, setWorkers] = useState<Worker[]>([]);
-  const [slots, setSlots] = useState<AvailableSlot[]>([]);
-  const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
-  const [form, setForm] = useState<BookingForm>({
-    serviceId: '',
-    workerId: '',
-    date: formatDateInput(new Date()),
-    customerName: '',
-    customerPhone: '',
-  });
+export function TodayScreen({
+  api,
+  salon,
+  user,
+  onOpenAdd,
+  onOpenTimeBlocks,
+  onOpenAppointment,
+}: TodayScreenProps) {
+  const [summary, setSummary] = useState<TodaySummary | null>(null);
+  const [calls, setCalls] = useState<RecentCall[]>([]);
   const [loading, setLoading] = useState(true);
-  const [findingSlots, setFindingSlots] = useState(false);
-  const [booking, setBooking] = useState(false);
-  const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
 
-  async function loadData(showSpinner = true) {
-    if (showSpinner) {
-      setLoading(true);
-    }
-
+  async function loadToday() {
     setError('');
 
     try {
-      const [appointmentsResponse, servicesResponse, workersResponse] =
-        await Promise.all([
-          api.appointments({ date: form.date }),
-          api.services(),
-          api.workers(),
-        ]);
-
-      setAppointments(appointmentsResponse);
-      setServices(servicesResponse);
-      setWorkers(workersResponse);
+      const [todayResponse, callsResponse] = await Promise.all([
+        api.today(),
+        api.recentCalls(),
+      ]);
+      setSummary(todayResponse);
+      setCalls(callsResponse);
     } catch (loadError) {
       setError(errorMessage(loadError));
     } finally {
@@ -74,320 +61,203 @@ export function TodayScreen({ api, onBack }: TodayScreenProps) {
     }
   }
 
-  useEffect(() => {
-    loadData();
-  }, [api, form.date]);
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      loadToday();
+    }, [api]),
+  );
 
-  function updateForm(patch: Partial<BookingForm>) {
-    setForm((currentForm) => ({ ...currentForm, ...patch }));
-    setSlots([]);
-    setSelectedSlot(null);
-    setError('');
-    setNotice('');
+  if (loading) {
+    return (
+      <AppScreen>
+        <AppHeader
+          aiEnabled={salon.receptionistEnabled}
+          salonName={salon.name}
+          userEmail={user.email}
+        />
+        <LoadingState message="Loading today..." />
+      </AppScreen>
+    );
   }
 
-  async function findSlots() {
-    if (!form.serviceId) {
-      setError('Select a service first');
-      return;
-    }
-
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) {
-      setError('Date must use YYYY-MM-DD format');
-      return;
-    }
-
-    setFindingSlots(true);
-    setError('');
-    setNotice('');
-    setSelectedSlot(null);
-
-    try {
-      const response = await api.availableSlots({
-        serviceId: form.serviceId,
-        workerId: form.workerId || undefined,
-        date: form.date,
-        limit: 6,
-      });
-
-      setSlots(response.slots);
-
-      if (response.slots.length === 0) {
-        setNotice('No available slots for this choice');
-      }
-    } catch (slotsError) {
-      setError(errorMessage(slotsError));
-    } finally {
-      setFindingSlots(false);
-    }
+  if (error || !summary) {
+    return (
+      <AppScreen>
+        <AppHeader
+          aiEnabled={salon.receptionistEnabled}
+          salonName={salon.name}
+          userEmail={user.email}
+        />
+        <ErrorState message={error || 'Today could not be loaded'} onAction={loadToday} />
+      </AppScreen>
+    );
   }
 
-  async function confirmBooking() {
-    if (!selectedSlot) {
-      setError('Choose an available slot');
-      return;
-    }
-
-    if (!form.customerName.trim()) {
-      setError('Customer name is required');
-      return;
-    }
-
-    if (form.customerPhone.trim().length < 3) {
-      setError('Customer phone is required');
-      return;
-    }
-
-    setBooking(true);
-    setError('');
-    setNotice('');
-
-    try {
-      await api.bookAppointment({
-        workerId: selectedSlot.workerId,
-        serviceId: form.serviceId,
-        customerName: form.customerName.trim(),
-        customerPhone: form.customerPhone.trim(),
-        startAt: selectedSlot.startAt,
-        channel: 'MANUAL',
-      });
-
-      setForm({
-        serviceId: '',
-        workerId: '',
-        date: form.date,
-        customerName: '',
-        customerPhone: '',
-      });
-      setSlots([]);
-      setSelectedSlot(null);
-      setNotice('Appointment booked');
-      await loadData(false);
-    } catch (bookingError) {
-      setError(errorMessage(bookingError));
-    } finally {
-      setBooking(false);
-    }
-  }
-
-  async function cancelAppointment(appointment: Appointment) {
-    setCancelingId(appointment.id);
-    setError('');
-    setNotice('');
-
-    try {
-      await api.cancelBooking({ appointmentId: appointment.id });
-      setNotice('Appointment cancelled');
-      await loadData(false);
-    } catch (cancelError) {
-      setError(errorMessage(cancelError));
-    } finally {
-      setCancelingId(null);
-    }
-  }
-
-  const activeServices = services.filter((service) => service.isActive);
-  const activeWorkers = workers.filter((worker) => worker.isActive);
-  const bookedAppointments = appointments.filter(
+  const bookedAppointments = summary.appointments.filter(
     (appointment) => appointment.status === 'BOOKED',
   );
 
   return (
-    <DashboardLayout
-      onBack={onBack}
-      subtitle="Book and manage today's appointments."
-      title="Today"
-    >
-      <DashboardCard>
-        <Text style={styles.sectionTitle}>New Appointment</Text>
+    <AppScreen>
+      <AppHeader
+        aiEnabled={salon.receptionistEnabled}
+        salonName={salon.name}
+        userEmail={user.email}
+      />
 
-        <DashboardField
-          label="Date"
-          onChangeText={(date) => updateForm({ date })}
-          placeholder="2026-06-26"
-          value={form.date}
+      <NextAppointmentCard appointment={summary.nextAppointment} />
+
+      <View style={styles.statsRow}>
+        <StatCard label="Booked" value={summary.stats.booked} />
+        <StatCard label="Completed" tone="success" value={summary.stats.completed} />
+        <StatCard label="Cancelled" tone="danger" value={summary.stats.cancelled} />
+      </View>
+
+      <View style={styles.quickRow}>
+        <QuickActionCard
+          icon={Plus}
+          onPress={onOpenAdd}
+          subtitle="Find a slot"
+          title="New Appointment"
         />
-
-        <Text style={styles.label}>Service</Text>
-        <View style={styles.choiceRow}>
-          {activeServices.length === 0 ? (
-            <DashboardNotice message="No active services yet" />
-          ) : (
-            activeServices.map((service) => (
-              <DashboardButton
-                key={service.id}
-                label={`${service.name} (${service.durationMinutes}m)`}
-                onPress={() => updateForm({ serviceId: service.id })}
-                variant={
-                  form.serviceId === service.id ? 'primary' : 'secondary'
-                }
-              />
-            ))
-          )}
-        </View>
-
-        <Text style={styles.label}>Worker</Text>
-        <View style={styles.choiceRow}>
-          <DashboardButton
-            label="Any available"
-            onPress={() => updateForm({ workerId: '' })}
-            variant={form.workerId === '' ? 'primary' : 'secondary'}
-          />
-          {activeWorkers.map((worker) => (
-            <DashboardButton
-              key={worker.id}
-              label={worker.name}
-              onPress={() => updateForm({ workerId: worker.id })}
-              variant={form.workerId === worker.id ? 'primary' : 'secondary'}
-            />
-          ))}
-        </View>
-
-        <DashboardButton
-          disabled={findingSlots}
-          label={findingSlots ? 'Finding...' : 'Find available slots'}
-          onPress={findSlots}
+        <QuickActionCard
+          icon={ShieldOff}
+          onPress={onOpenTimeBlocks}
+          subtitle="Pause calendar"
+          title="Block Time"
         />
-
-        {slots.length > 0 ? (
-          <>
-            <Text style={styles.label}>Available slots</Text>
-            <View style={styles.choiceRow}>
-              {slots.map((slot) => (
-                <DashboardButton
-                  key={`${slot.workerId}-${slot.startAt}`}
-                  label={slot.label}
-                  onPress={() => setSelectedSlot(slot)}
-                  variant={
-                    selectedSlot?.workerId === slot.workerId &&
-                    selectedSlot?.startAt === slot.startAt
-                      ? 'primary'
-                      : 'secondary'
-                  }
-                />
-              ))}
-            </View>
-          </>
-        ) : null}
-
-        <DashboardField
-          label="Customer name"
-          onChangeText={(customerName) =>
-            setForm({ ...form, customerName })
-          }
-          placeholder="Marko"
-          value={form.customerName}
+        <QuickActionCard
+          icon={History}
+          subtitle="Coming soon"
+          title="Call History"
         />
-        <DashboardField
-          label="Customer phone"
-          onChangeText={(customerPhone) =>
-            setForm({ ...form, customerPhone })
-          }
-          placeholder="+381641234567"
-          value={form.customerPhone}
-        />
-        <DashboardButton
-          disabled={booking}
-          label={booking ? 'Booking...' : 'Confirm booking'}
-          onPress={confirmBooking}
-        />
-      </DashboardCard>
+      </View>
 
-      {error ? <DashboardNotice message={error} tone="error" /> : null}
-      {notice ? <DashboardNotice message={notice} tone="success" /> : null}
-
-      <DashboardCard>
-        <Text style={styles.sectionTitle}>Appointments</Text>
-        {loading ? (
-          <ActivityIndicator color={dashboardColors.primary} />
-        ) : bookedAppointments.length === 0 ? (
-          <DashboardNotice message="No booked appointments for this date" />
+      <View style={styles.section}>
+        <SectionHeader title="Today timeline" />
+        {bookedAppointments.length === 0 ? (
+          <EmptyState message="No booked appointments for today." />
         ) : (
           <View style={styles.list}>
             {bookedAppointments.map((appointment) => (
-              <View key={appointment.id} style={styles.appointmentRow}>
-                <View style={styles.appointmentText}>
-                  <Text style={styles.appointmentTitle}>
-                    {appointment.customerName}
-                  </Text>
-                  <Text style={styles.appointmentMeta}>
-                    {formatTime(appointment.startAt)}-{formatTime(appointment.endAt)}
-                  </Text>
-                  <Text style={styles.appointmentMeta}>
-                    {appointment.serviceName} with {appointment.workerName}
-                  </Text>
-                </View>
-                <DashboardButton
-                  disabled={cancelingId === appointment.id}
-                  label={
-                    cancelingId === appointment.id ? 'Cancelling...' : 'Cancel'
-                  }
-                  onPress={() => cancelAppointment(appointment)}
-                  variant="danger"
-                />
-              </View>
+              <AppointmentCard
+                appointment={appointment}
+                key={appointment.id}
+                onPress={() => onOpenAppointment(appointment.id)}
+              />
             ))}
           </View>
         )}
-      </DashboardCard>
-    </DashboardLayout>
+      </View>
+
+      <View style={styles.section}>
+        <SectionHeader title="Recent calls" />
+        <Card>
+          {calls.length === 0 ? (
+            <Text style={styles.muted}>No recent calls yet.</Text>
+          ) : (
+            calls.map((call) => (
+              <View key={call.id} style={styles.callRow}>
+                <Text style={styles.callPhone}>
+                  {call.customerPhone ?? 'Unknown caller'}
+                </Text>
+                <Text style={styles.muted}>
+                  {call.outcome} · {formatTime(call.startedAt)}
+                </Text>
+              </View>
+            ))
+          )}
+        </Card>
+      </View>
+    </AppScreen>
   );
 }
 
-function formatDateInput(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
-
-function formatTime(value: string) {
-  return new Date(value).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Something went wrong';
+function NextAppointmentCard({
+  appointment,
+}: {
+  appointment: Appointment | null;
+}) {
+  return (
+    <Card>
+      <View style={styles.nextHeader}>
+        <Text style={styles.cardLabel}>Next Appointment</Text>
+        <Clock color={theme.colors.primary} size={18} strokeWidth={2.4} />
+      </View>
+      {appointment ? (
+        <>
+          <Text style={styles.nextTime}>{formatTime(appointment.startAt)}</Text>
+          <Text style={styles.nextCustomer}>{appointment.customerName}</Text>
+          <Text style={styles.nextMeta}>
+            {appointment.serviceName} with {appointment.workerName}
+          </Text>
+        </>
+      ) : (
+        <Text style={styles.emptyNext}>No more appointments today</Text>
+      )}
+    </Card>
+  );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
-    color: dashboardColors.ink,
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  label: {
-    color: '#344054',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  choiceRow: {
+  statsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: theme.spacing[3],
+  },
+  quickRow: {
+    flexDirection: 'row',
+    gap: theme.spacing[3],
+  },
+  section: {
+    gap: theme.spacing[3],
   },
   list: {
-    gap: 12,
+    gap: theme.spacing[3],
   },
-  appointmentRow: {
-    borderTopColor: dashboardColors.border,
-    borderTopWidth: 1,
-    gap: 10,
-    paddingTop: 12,
+  nextHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  appointmentText: {
-    gap: 3,
-  },
-  appointmentTitle: {
-    color: dashboardColors.ink,
-    fontSize: 17,
+  cardLabel: {
+    color: theme.colors.mutedText,
+    fontSize: theme.typography.small,
     fontWeight: '800',
   },
-  appointmentMeta: {
-    color: dashboardColors.muted,
-    fontSize: 14,
+  nextTime: {
+    color: theme.colors.primary,
+    fontSize: 34,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  nextCustomer: {
+    color: theme.colors.text,
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  nextMeta: {
+    color: theme.colors.mutedText,
+    fontSize: theme.typography.body,
+  },
+  emptyNext: {
+    color: theme.colors.text,
+    fontSize: theme.typography.cardTitle,
+    fontWeight: '800',
+  },
+  muted: {
+    color: theme.colors.mutedText,
+    fontSize: theme.typography.body,
+  },
+  callRow: {
+    borderBottomColor: theme.colors.border,
+    borderBottomWidth: 1,
+    gap: 3,
+    paddingBottom: theme.spacing[3],
+  },
+  callPhone: {
+    color: theme.colors.text,
+    fontSize: theme.typography.body,
+    fontWeight: '800',
   },
 });

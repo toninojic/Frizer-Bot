@@ -37,6 +37,14 @@ export class AppointmentsController {
     });
   }
 
+  @Get(':id')
+  findOneForSalon(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.appointmentsService.findOneForSalon(user.salonId, id);
+  }
+
   @Post()
   create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateAppointmentDto) {
     return this.bookingEngineService.createBooking({

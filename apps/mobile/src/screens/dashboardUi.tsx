@@ -9,6 +9,7 @@ import {
   TextInputProps,
   View,
 } from 'react-native';
+import { theme } from '../theme/theme';
 
 type DashboardLayoutProps = {
   title: string;
@@ -111,7 +112,7 @@ export function DashboardField({
         keyboardType={keyboardType}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#98a2b3"
+        placeholderTextColor={theme.colors.mutedText}
         style={styles.input}
         value={value}
       />
@@ -134,22 +135,22 @@ export function DashboardNotice({ message, tone = 'muted' }: NoticeProps) {
 }
 
 export const dashboardColors = {
-  border: '#e4e7ec',
-  ink: '#101828',
-  muted: '#667085',
-  primary: '#135e4b',
-  surface: '#ffffff',
+  border: theme.colors.border,
+  ink: theme.colors.text,
+  muted: theme.colors.mutedText,
+  primary: theme.colors.primary,
+  surface: theme.colors.card,
 };
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f7f7f4',
+    backgroundColor: theme.colors.background,
   },
   content: {
-    gap: 14,
-    padding: 20,
-    paddingBottom: 32,
+    gap: theme.spacing[4],
+    padding: theme.spacing[5],
+    paddingBottom: theme.spacing[8],
   },
   header: {
     alignItems: 'flex-start',
@@ -162,79 +163,80 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   title: {
-    color: '#101828',
-    fontSize: 28,
-    fontWeight: '800',
+    color: theme.colors.text,
+    fontSize: theme.typography.screenTitle,
+    fontWeight: '900',
     letterSpacing: 0,
   },
   subtitle: {
-    color: '#667085',
-    fontSize: 14,
+    color: theme.colors.mutedText,
+    fontSize: theme.typography.small,
     lineHeight: 20,
   },
   card: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e4e7ec',
-    borderRadius: 8,
+    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.medium,
     borderWidth: 1,
-    gap: 10,
-    padding: 16,
+    gap: theme.spacing[3],
+    padding: theme.spacing[4],
+    ...theme.shadow,
   },
   button: {
     alignItems: 'center',
-    backgroundColor: '#135e4b',
-    borderRadius: 8,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.medium,
     justifyContent: 'center',
     minHeight: 46,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
   secondaryButton: {
-    backgroundColor: '#ffffff',
-    borderColor: '#98a2b3',
+    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.border,
     borderWidth: 1,
   },
   dangerButton: {
-    backgroundColor: '#b42318',
+    backgroundColor: theme.colors.danger,
   },
   disabledButton: {
     opacity: 0.55,
   },
   buttonText: {
-    color: '#ffffff',
-    fontSize: 15,
+    color: theme.colors.card,
+    fontSize: theme.typography.body,
     fontWeight: '800',
   },
   secondaryButtonText: {
-    color: '#344054',
+    color: theme.colors.text,
   },
   field: {
     gap: 6,
   },
   label: {
-    color: '#344054',
-    fontSize: 13,
-    fontWeight: '700',
+    color: theme.colors.text,
+    fontSize: theme.typography.small,
+    fontWeight: '800',
   },
   input: {
-    backgroundColor: '#ffffff',
-    borderColor: '#d0d5dd',
-    borderRadius: 8,
+    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.medium,
     borderWidth: 1,
-    color: '#101828',
-    fontSize: 16,
+    color: theme.colors.text,
+    fontSize: theme.typography.body,
     minHeight: 46,
     paddingHorizontal: 12,
   },
   notice: {
-    color: '#667085',
-    fontSize: 14,
+    color: theme.colors.mutedText,
+    fontSize: theme.typography.small,
     lineHeight: 20,
   },
   errorNotice: {
-    color: '#b42318',
+    color: '#B42318',
   },
   successNotice: {
-    color: '#027a48',
+    color: '#027A48',
   },
 });

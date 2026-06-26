@@ -66,6 +66,16 @@ export type TimeBlock = {
   endAt: string;
 };
 
+export type Customer = {
+  id: string;
+  salonId: string;
+  name: string;
+  phone: string;
+  visitCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type AppointmentStatus = 'BOOKED' | 'CANCELLED' | 'COMPLETED';
 
 export type BookingChannel = 'MANUAL' | 'PHONE' | 'WHATSAPP' | 'INSTAGRAM';
@@ -93,6 +103,26 @@ export type AvailableSlot = {
   startAt: string;
   endAt: string;
   label: string;
+};
+
+export type TodaySummary = {
+  date: string;
+  nextAppointment: Appointment | null;
+  stats: {
+    booked: number;
+    completed: number;
+    cancelled: number;
+  };
+  appointments: Appointment[];
+};
+
+export type RecentCall = {
+  id: string;
+  customerPhone: string | null;
+  startedAt: string;
+  endedAt: string | null;
+  durationSeconds: number | null;
+  outcome: string;
 };
 
 type ApiClientOptions = {
@@ -164,6 +194,18 @@ export function createApiClient(options: ApiClientOptions) {
     },
     salonSettings() {
       return request<SalonSettings>('/dashboard/salon-settings');
+    },
+    updateSalonSettings(body: Partial<SalonSettings>) {
+      return request<SalonSettings>('/dashboard/salon-settings', {
+        method: 'PATCH',
+        body,
+      });
+    },
+    today() {
+      return request<TodaySummary>('/dashboard/today');
+    },
+    recentCalls() {
+      return request<RecentCall[]>('/dashboard/calls/recent');
     },
     workers() {
       return request<Worker[]>('/dashboard/workers');
@@ -253,10 +295,19 @@ export function createApiClient(options: ApiClientOptions) {
         method: 'DELETE',
       });
     },
+    customers(filters: { search?: string } = {}) {
+      return request<Customer[]>(`/dashboard/customers${queryString(filters)}`);
+    },
+    customer(id: string) {
+      return request<Customer>(`/dashboard/customers/${id}`);
+    },
     appointments(filters: { date?: string; from?: string; to?: string } = {}) {
       return request<Appointment[]>(
         `/dashboard/appointments${queryString(filters)}`,
       );
+    },
+    appointment(id: string) {
+      return request<Appointment>(`/dashboard/appointments/${id}`);
     },
     availableSlots(filters: {
       serviceId: string;

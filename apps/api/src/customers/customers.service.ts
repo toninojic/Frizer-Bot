@@ -12,9 +12,29 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 export class CustomersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAllForSalon(salonId: string) {
+  findAllForSalon(salonId: string, search?: string) {
+    const normalizedSearch = search?.trim();
+
     return this.prisma.customer.findMany({
-      where: { salonId },
+      where: {
+        salonId,
+        OR: normalizedSearch
+          ? [
+              {
+                name: {
+                  contains: normalizedSearch,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                phone: {
+                  contains: normalizedSearch,
+                  mode: 'insensitive',
+                },
+              },
+            ]
+          : undefined,
+      },
       orderBy: { name: 'asc' },
     });
   }
@@ -55,7 +75,7 @@ export class CustomersService {
     }
   }
 
-  private async findOneForSalon(salonId: string, id: string) {
+  async findOneForSalon(salonId: string, id: string) {
     const customer = await this.prisma.customer.findFirst({
       where: { id, salonId },
     });

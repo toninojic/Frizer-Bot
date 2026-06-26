@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { AppointmentStatus, BookingChannel } from '@prisma/client';
 import { DateTime } from 'luxon';
@@ -53,6 +54,21 @@ export class AppointmentsService {
     return appointments.map((appointment) =>
       this.toAppointmentResponse(appointment),
     );
+  }
+
+  async findOneForSalon(salonId: string, appointmentId: string) {
+    const appointment = await this.prisma.appointment.findFirst({
+      where: {
+        id: appointmentId,
+        salonId,
+      },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('APPOINTMENT_NOT_FOUND');
+    }
+
+    return this.toAppointmentResponse(appointment);
   }
 
   private async toDateRange(salonId: string, filters: AppointmentFilters) {

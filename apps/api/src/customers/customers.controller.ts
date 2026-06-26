@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticatedUser } from '../auth/auth.types';
@@ -20,8 +21,19 @@ export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
   @Get()
-  findAllForSalon(@CurrentUser() user: AuthenticatedUser) {
-    return this.customersService.findAllForSalon(user.salonId);
+  findAllForSalon(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('search') search?: string,
+  ) {
+    return this.customersService.findAllForSalon(user.salonId, search);
+  }
+
+  @Get(':id')
+  findOneForSalon(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.customersService.findOneForSalon(user.salonId, id);
   }
 
   @Post()

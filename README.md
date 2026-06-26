@@ -133,6 +133,9 @@ PATCH  /dashboard/salon
 GET    /dashboard/salon-settings
 PATCH  /dashboard/salon-settings
 
+GET    /dashboard/today
+GET    /dashboard/calls/recent
+
 GET    /dashboard/workers
 POST   /dashboard/workers
 PATCH  /dashboard/workers/:id
@@ -151,12 +154,15 @@ POST   /dashboard/time-blocks
 DELETE /dashboard/time-blocks/:id
 
 GET    /dashboard/customers
+GET    /dashboard/customers?search=marko
+GET    /dashboard/customers/:id
 POST   /dashboard/customers
 PATCH  /dashboard/customers/:id
 
 GET    /dashboard/appointments
 GET    /dashboard/appointments?date=2026-06-26
 GET    /dashboard/appointments?from=2026-06-26&to=2026-06-30
+GET    /dashboard/appointments/:id
 POST   /dashboard/appointments
 PATCH  /dashboard/appointments/:id/cancel
 
@@ -226,16 +232,36 @@ npm run web
 
 ## Dashboard Screens
 
-After login, the salon owner can navigate between:
+After login, the salon owner lands in a mobile-first SaaS dashboard with bottom tabs:
 
 - Today
+- Calendar
+- Add
+- Clients
+- Settings
+
+The app also has stack screens for:
+
+- Appointment Details
 - Services
 - Workers
 - Working Hours
 - Blocked Time
-- Settings
 
-The Today screen lists booked appointments for the selected date, supports cancelling booked appointments, and includes a New Appointment flow powered by the central Booking Engine. Services, Workers, Working Hours, and Blocked Time are functional MVP configuration screens for booking rules.
+The Today screen is the main product surface. It shows the salon header, AI status, next appointment, today stats, quick actions, the appointment timeline, and a recent calls preview.
+
+The Add tab contains the manual booking flow powered by the central Booking Engine. Services, Workers, Working Hours, and Blocked Time are accessible from Settings.
+
+## Mobile Design System
+
+The Expo app has centralized design tokens in `apps/mobile/src/theme`:
+
+- pastel colors
+- spacing scale `4, 8, 12, 16, 20, 24, 32`
+- typography sizes
+- soft card radius and shadows
+
+Reusable UI components live in `apps/mobile/src/components`, including `AppScreen`, `AppHeader`, `Card`, `Button`, `IconButton`, `StatusBadge`, `EmptyState`, `LoadingState`, `ErrorState`, `SectionHeader`, `AppointmentCard`, `QuickActionCard`, `StatCard`, `FormInput`, `SelectCard`, `TimeSlotCard`, and `ToggleSwitch`.
 
 ## Managing Workers
 

@@ -1,57 +1,46 @@
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StyleSheet } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AuthUser, createApiClient, SalonSettings } from './src/api/client';
 import {
   clearStoredAccessToken,
   getStoredAccessToken,
   storeAccessToken,
 } from './src/auth/tokenStorage';
-import { HomeScreen } from './src/screens/HomeScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
-import { ServicesScreen } from './src/screens/ServicesScreen';
-import { SettingsScreen } from './src/screens/SettingsScreen';
-import { TimeBlocksScreen } from './src/screens/TimeBlocksScreen';
-import { TodayScreen } from './src/screens/TodayScreen';
-import { WorkersScreen } from './src/screens/WorkersScreen';
-import { WorkingHoursScreen } from './src/screens/WorkingHoursScreen';
-
-type DashboardScreen =
-  | 'home'
-  | 'today'
-  | 'services'
-  | 'workers'
-  | 'workingHours'
-  | 'timeBlocks'
-  | 'settings';
+import { AppNavigator } from './src/navigation/AppNavigator';
+import { theme } from './src/theme/theme';
 
 export default function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [salon, setSalon] = useState<SalonSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [screen, setScreen] = useState<DashboardScreen>('home');
 
   async function resetSession() {
     await clearStoredAccessToken();
     setAccessToken(null);
     setUser(null);
     setSalon(null);
-    setScreen('home');
   }
 
-  function clientForToken(token: string | null) {
-    return createApiClient({
+  const api = useMemo(
+    () =>
+      createApiClient({
+        getAccessToken: () => accessToken,
+        onUnauthorized: resetSession,
+      }),
+    [accessToken],
+  );
+
+  async function loadSession(token: string) {
+    const sessionApi = createApiClient({
       getAccessToken: () => token,
       onUnauthorized: resetSession,
     });
-  }
-
-  async function loadSession(token: string) {
-    const api = clientForToken(token);
     const [me, settings] = await Promise.all([
-      api.me(),
-      api.salonSettings(),
+      sessionApi.me(),
+      sessionApi.salonSettings(),
     ]);
 
     setAccessToken(token);
@@ -81,8 +70,11 @@ export default function App() {
   }, []);
 
   async function handleLogin(email: string, password: string) {
-    const api = clientForToken(null);
-    const loginResponse = await api.login(email, password);
+    const loginApi = createApiClient({
+      getAccessToken: () => null,
+      onUnauthorized: resetSession,
+    });
+    const loginResponse = await loginApi.login(email, password);
 
     await storeAccessToken(loginResponse.accessToken);
     await loadSession(loginResponse.accessToken);
@@ -92,56 +84,26 @@ export default function App() {
 
   if (loading) {
     content = (
-      <SafeAreaView style={styles.loading}>
-        <ActivityIndicator color="#135e4b" size="large" />
-      </SafeAreaView>
+      <View style={styles.loading}>
+        <ActivityIndicator color={theme.colors.primary} size="large" />
+      </View>
     );
   } else if (accessToken && user && salon) {
-    const api = clientForToken(accessToken);
-    const backHome = () => setScreen('home');
-
-    switch (screen) {
-      case 'today':
-        content = <TodayScreen api={api} onBack={backHome} />;
-        break;
-      case 'services':
-        content = <ServicesScreen api={api} onBack={backHome} />;
-        break;
-      case 'workers':
-        content = <WorkersScreen api={api} onBack={backHome} />;
-        break;
-      case 'workingHours':
-        content = <WorkingHoursScreen api={api} onBack={backHome} />;
-        break;
-      case 'timeBlocks':
-        content = <TimeBlocksScreen api={api} onBack={backHome} />;
-        break;
-      case 'settings':
-        content = <SettingsScreen salon={salon} onBack={backHome} />;
-        break;
-      case 'home':
-      default:
-        content = (
-          <HomeScreen
-            onLogout={resetSession}
-            onOpenServices={() => setScreen('services')}
-            onOpenSettings={() => setScreen('settings')}
-            onOpenTimeBlocks={() => setScreen('timeBlocks')}
-            onOpenToday={() => setScreen('today')}
-            onOpenWorkers={() => setScreen('workers')}
-            onOpenWorkingHours={() => setScreen('workingHours')}
-            salon={salon}
-            user={user}
-          />
-        );
-        break;
-    }
+    content = (
+      <AppNavigator
+        api={api}
+        onLogout={resetSession}
+        onSalonUpdated={setSalon}
+        salon={salon}
+        user={user}
+      />
+    );
   }
 
   return (
     <>
       {content}
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
     </>
   );
 }
@@ -149,7 +111,7 @@ export default function App() {
 const styles = StyleSheet.create({
   loading: {
     alignItems: 'center',
-    backgroundColor: '#f7f7f4',
+    backgroundColor: theme.colors.background,
     flex: 1,
     justifyContent: 'center',
   },

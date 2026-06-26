@@ -1,16 +1,10 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import type { PressableStateCallbackType } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { AppScreen } from '../components/AppScreen';
+import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { FormInput } from '../components/FormInput';
+import { theme } from '../theme/theme';
 
 type LoginScreenProps = {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -30,9 +24,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       await onLogin(email.trim(), password);
     } catch (loginError) {
       setError(
-        loginError instanceof Error
-          ? loginError.message
-          : 'Login failed',
+        loginError instanceof Error ? loginError.message : 'Login failed',
       );
     } finally {
       setLoading(false);
@@ -40,124 +32,83 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.container}
-      >
-        <View style={styles.header}>
-          <Text style={styles.kicker}>AI Salon Receptionist</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.keyboard}
+    >
+      <AppScreen>
+        <View style={styles.hero}>
+          <View style={styles.mark}>
+            <Text style={styles.markText}>AI</Text>
+          </View>
           <Text style={styles.title}>Salon dashboard</Text>
+          <Text style={styles.subtitle}>
+            Manage today, bookings, clients, and receptionist settings.
+          </Text>
         </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            autoCapitalize="none"
-            autoComplete="email"
-            editable={!loading}
-            keyboardType="email-address"
+        <Card>
+          <FormInput
+            label="Email"
             onChangeText={setEmail}
-            style={styles.input}
+            placeholder="owner@salon.local"
             value={email}
           />
-
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            autoComplete="password"
-            editable={!loading}
+          <FormInput
+            label="Password"
             onChangeText={setPassword}
+            placeholder="password"
             secureTextEntry
-            style={styles.input}
             value={password}
           />
-
           {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          <Pressable
+          <Button
             disabled={loading}
+            label={loading ? 'Logging in...' : 'Log in'}
             onPress={handleLogin}
-            style={({ pressed }: PressableStateCallbackType) => [
-              styles.button,
-              pressed || loading ? styles.buttonPressed : null,
-            ]}
-          >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.buttonText}>Log in</Text>
-            )}
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          />
+        </Card>
+      </AppScreen>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  keyboard: {
     flex: 1,
-    backgroundColor: '#f6f2eb',
+    backgroundColor: theme.colors.background,
   },
-  container: {
-    flex: 1,
+  hero: {
+    gap: theme.spacing[3],
+    paddingTop: theme.spacing[8],
+  },
+  mark: {
+    alignItems: 'center',
+    backgroundColor: '#F0F2FF',
+    borderRadius: theme.radius.large,
+    height: 56,
     justifyContent: 'center',
-    padding: 24,
+    width: 56,
   },
-  header: {
-    marginBottom: 28,
-  },
-  kicker: {
-    color: '#667085',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0,
-    textTransform: 'uppercase',
+  markText: {
+    color: theme.colors.primary,
+    fontSize: 18,
+    fontWeight: '900',
   },
   title: {
-    color: '#172026',
-    fontSize: 32,
-    fontWeight: '800',
+    color: theme.colors.text,
+    fontSize: 34,
+    fontWeight: '900',
     letterSpacing: 0,
-    marginTop: 8,
   },
-  form: {
-    gap: 10,
-  },
-  label: {
-    color: '#344054',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  input: {
-    backgroundColor: '#ffffff',
-    borderColor: '#d0d5dd',
-    borderRadius: 8,
-    borderWidth: 1,
-    color: '#101828',
-    fontSize: 16,
-    minHeight: 48,
-    paddingHorizontal: 14,
+  subtitle: {
+    color: theme.colors.mutedText,
+    fontSize: theme.typography.body,
+    lineHeight: 22,
   },
   error: {
-    color: '#b42318',
-    fontSize: 14,
-    marginTop: 4,
-  },
-  button: {
-    alignItems: 'center',
-    backgroundColor: '#135e4b',
-    borderRadius: 8,
-    justifyContent: 'center',
-    marginTop: 10,
-    minHeight: 50,
-  },
-  buttonPressed: {
-    opacity: 0.78,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
+    color: '#B42318',
+    fontSize: theme.typography.small,
     fontWeight: '800',
   },
 });
