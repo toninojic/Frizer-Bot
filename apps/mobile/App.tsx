@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthUser, createApiClient, SalonSettings } from './src/api/client';
 import {
   clearStoredAccessToken,
@@ -101,10 +102,10 @@ export default function App() {
   }
 
   return (
-    <>
+    <SafeAreaProvider>
       {content}
       <StatusBar style="dark" />
-    </>
+    </SafeAreaProvider>
   );
 }
 
