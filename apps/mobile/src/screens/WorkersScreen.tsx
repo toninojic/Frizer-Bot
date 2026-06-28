@@ -9,6 +9,7 @@ import {
   DashboardNotice,
   dashboardColors,
 } from './dashboardUi';
+import { useI18n } from '../i18n';
 
 type WorkersScreenProps = {
   api: ApiClient;
@@ -16,6 +17,7 @@ type WorkersScreenProps = {
 };
 
 export function WorkersScreen({ api, onBack }: WorkersScreenProps) {
+  const { mapError, t } = useI18n();
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export function WorkersScreen({ api, onBack }: WorkersScreenProps) {
     try {
       setWorkers(await api.workers());
     } catch (loadError) {
-      setError(errorMessage(loadError));
+      setError(mapError(loadError));
     } finally {
       setLoading(false);
     }
@@ -50,7 +52,7 @@ export function WorkersScreen({ api, onBack }: WorkersScreenProps) {
     const name = newName.trim();
 
     if (!name) {
-      setError('Worker name is required');
+      setError(t('workers.nameRequired'));
       return;
     }
 
@@ -61,10 +63,10 @@ export function WorkersScreen({ api, onBack }: WorkersScreenProps) {
     try {
       await api.createWorker({ name });
       setNewName('');
-      setNotice('Worker saved');
+      setNotice(t('workers.saved'));
       await loadWorkers(false);
     } catch (saveError) {
-      setError(errorMessage(saveError));
+      setError(mapError(saveError));
     } finally {
       setSaving(false);
     }
@@ -81,7 +83,7 @@ export function WorkersScreen({ api, onBack }: WorkersScreenProps) {
     const name = editingName.trim();
 
     if (!name) {
-      setError('Worker name is required');
+      setError(t('workers.nameRequired'));
       return;
     }
 
@@ -93,10 +95,10 @@ export function WorkersScreen({ api, onBack }: WorkersScreenProps) {
       await api.updateWorker(worker.id, { name });
       setEditingId(null);
       setEditingName('');
-      setNotice('Worker updated');
+      setNotice(t('workers.updated'));
       await loadWorkers(false);
     } catch (saveError) {
-      setError(errorMessage(saveError));
+      setError(mapError(saveError));
     } finally {
       setWorkingId(null);
     }
@@ -110,15 +112,15 @@ export function WorkersScreen({ api, onBack }: WorkersScreenProps) {
     try {
       if (isActive) {
         await api.updateWorker(worker.id, { isActive: true });
-        setNotice('Worker reactivated');
+        setNotice(t('workers.reactivated'));
       } else {
         await api.deactivateWorker(worker.id);
-        setNotice('Worker deactivated');
+        setNotice(t('workers.deactivated'));
       }
 
       await loadWorkers(false);
     } catch (saveError) {
-      setError(errorMessage(saveError));
+      setError(mapError(saveError));
     } finally {
       setWorkingId(null);
     }
@@ -130,19 +132,19 @@ export function WorkersScreen({ api, onBack }: WorkersScreenProps) {
   return (
     <DashboardLayout
       onBack={onBack}
-      subtitle="Manage staff who can take appointments."
-      title="Workers"
+      subtitle={t('workers.subtitle')}
+      title={t('workers.title')}
     >
       <DashboardCard>
         <DashboardField
-          label="Name"
+          label={t('workers.name')}
           onChangeText={setNewName}
           placeholder="Ana"
           value={newName}
         />
         <DashboardButton
           disabled={saving}
-          label={saving ? 'Saving...' : 'Add worker'}
+          label={saving ? t('common.saving') : t('workers.add')}
           onPress={addWorker}
         />
       </DashboardCard>
@@ -153,7 +155,7 @@ export function WorkersScreen({ api, onBack }: WorkersScreenProps) {
       {loading ? (
         <ActivityIndicator color={dashboardColors.primary} />
       ) : workers.length === 0 ? (
-        <DashboardNotice message="No workers yet" />
+        <DashboardNotice message={t('workers.empty')} />
       ) : (
         <View style={styles.list}>
           {activeWorkers.map((worker) => (
@@ -172,7 +174,7 @@ export function WorkersScreen({ api, onBack }: WorkersScreenProps) {
           ))}
 
           {inactiveWorkers.length > 0 ? (
-            <Text style={styles.sectionLabel}>Inactive</Text>
+            <Text style={styles.sectionLabel}>{t('workers.inactiveSection')}</Text>
           ) : null}
 
           {inactiveWorkers.map((worker) => (
@@ -221,13 +223,14 @@ function WorkerCard({
   onDeactivate,
   onReactivate,
 }: WorkerCardProps) {
+  const { t } = useI18n();
   const isEditing = editingId === worker.id;
 
   return (
     <DashboardCard>
       {isEditing ? (
         <DashboardField
-          label="Worker name"
+          label={t('workers.workerName')}
           onChangeText={onSetEditingName}
           value={editingName}
         />
@@ -235,7 +238,7 @@ function WorkerCard({
         <View style={styles.cardHeader}>
           <Text style={styles.workerName}>{worker.name}</Text>
           <Text style={[styles.status, !worker.isActive ? styles.inactive : null]}>
-            {worker.isActive ? 'Active' : 'Inactive'}
+            {worker.isActive ? t('common.active') : t('common.inactive')}
           </Text>
         </View>
       )}
@@ -245,30 +248,30 @@ function WorkerCard({
           <>
             <DashboardButton
               disabled={working}
-              label={working ? 'Saving...' : 'Save'}
+              label={working ? t('common.saving') : t('common.save')}
               onPress={onSave}
             />
             <DashboardButton
               disabled={working}
-              label="Cancel"
+              label={t('common.cancel')}
               onPress={onCancelEditing}
               variant="secondary"
             />
           </>
         ) : (
           <>
-            <DashboardButton label="Edit" onPress={onEdit} variant="secondary" />
+            <DashboardButton label={t('common.edit')} onPress={onEdit} variant="secondary" />
             {worker.isActive ? (
               <DashboardButton
                 disabled={working}
-                label={working ? 'Saving...' : 'Deactivate'}
+                label={working ? t('common.saving') : t('workers.deactivate')}
                 onPress={onDeactivate}
                 variant="danger"
               />
             ) : (
               <DashboardButton
                 disabled={working}
-                label={working ? 'Saving...' : 'Reactivate'}
+                label={working ? t('common.saving') : t('workers.reactivate')}
                 onPress={onReactivate}
               />
             )}
@@ -277,10 +280,6 @@ function WorkerCard({
       </View>
     </DashboardCard>
   );
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Something went wrong';
 }
 
 const styles = StyleSheet.create({

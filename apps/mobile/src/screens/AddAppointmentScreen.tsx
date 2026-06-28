@@ -18,9 +18,9 @@ import { FormInput } from '../components/FormInput';
 import { SelectCard } from '../components/SelectCard';
 import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { TimeSlotCard } from '../components/TimeSlotCard';
+import { useI18n } from '../i18n';
 import { theme } from '../theme/theme';
 import { formatDateInput } from '../utils/date';
-import { errorMessage } from '../utils/formatting';
 
 type AddAppointmentScreenProps = {
   api: ApiClient;
@@ -51,6 +51,7 @@ export function AddAppointmentScreen({
   salon,
   user,
 }: AddAppointmentScreenProps) {
+  const { mapError, t } = useI18n();
   const [services, setServices] = useState<Service[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
@@ -73,7 +74,7 @@ export function AddAppointmentScreen({
       setServices(servicesResponse.filter((service) => service.isActive));
       setWorkers(workersResponse.filter((worker) => worker.isActive));
     } catch (loadError) {
-      setError(errorMessage(loadError));
+      setError(mapError(loadError));
     } finally {
       setLoading(false);
     }
@@ -95,12 +96,12 @@ export function AddAppointmentScreen({
 
   async function findSlots() {
     if (!form.serviceId) {
-      setError('Select a service first');
+      setError(t('booking.selectServiceFirst'));
       return;
     }
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) {
-      setError('Date must use YYYY-MM-DD format');
+      setError(t('common.invalidDate'));
       return;
     }
 
@@ -117,7 +118,7 @@ export function AddAppointmentScreen({
       setSlots(response.slots);
       setStep(4);
     } catch (slotError) {
-      setError(errorMessage(slotError));
+      setError(mapError(slotError));
     } finally {
       setFindingSlots(false);
     }
@@ -125,17 +126,17 @@ export function AddAppointmentScreen({
 
   async function confirmBooking() {
     if (!selectedSlot) {
-      setError('Choose an available slot');
+      setError(t('booking.chooseSlot'));
       return;
     }
 
     if (!form.customerName.trim()) {
-      setError('Customer name is required');
+      setError(t('booking.customerNameRequired'));
       return;
     }
 
     if (form.customerPhone.trim().length < 3) {
-      setError('Customer phone is required');
+      setError(t('booking.customerPhoneRequired'));
       return;
     }
 
@@ -153,7 +154,7 @@ export function AddAppointmentScreen({
       });
       setStep(6);
     } catch (bookingError) {
-      setError(errorMessage(bookingError));
+      setError(mapError(bookingError));
     } finally {
       setBooking(false);
     }
@@ -176,12 +177,12 @@ export function AddAppointmentScreen({
       />
 
       <View style={styles.titleBlock}>
-        <Text style={styles.screenTitle}>New Appointment</Text>
-        <Text style={styles.subtitle}>Step {step} of 6</Text>
+        <Text style={styles.screenTitle}>{t('booking.title')}</Text>
+        <Text style={styles.subtitle}>{t('booking.step', { step })}</Text>
       </View>
 
       {loading ? (
-        <LoadingState message="Loading booking options..." />
+        <LoadingState message={t('booking.loadingOptions')} />
       ) : error ? (
         <ErrorState message={error} onAction={() => setError('')} />
       ) : (
@@ -253,11 +254,13 @@ function StepServices({
   selectedServiceId: string;
   onSelect: (serviceId: string) => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.step}>
-      <Text style={styles.stepTitle}>Select service</Text>
+      <Text style={styles.stepTitle}>{t('booking.selectService')}</Text>
       {services.length === 0 ? (
-        <EmptyState message="Add services in Settings before booking." />
+        <EmptyState message={t('booking.addServicesFirst')} />
       ) : (
         services.map((service) => (
           <SelectCard
@@ -284,14 +287,16 @@ function StepWorkers({
   onSelect: (workerId: string) => void;
   onBack: () => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.step}>
-      <Text style={styles.stepTitle}>Select worker</Text>
+      <Text style={styles.stepTitle}>{t('booking.selectWorker')}</Text>
       <SelectCard
         onPress={() => onSelect('')}
         selected={selectedWorkerId === ''}
-        subtitle="Booking Engine chooses earliest slot"
-        title="Any available"
+        subtitle={t('booking.engineEarliest')}
+        title={t('common.anyAvailable')}
       />
       {workers.map((worker) => (
         <SelectCard
@@ -301,7 +306,7 @@ function StepWorkers({
           title={worker.name}
         />
       ))}
-      <Button label="Back" onPress={onBack} variant="secondary" />
+      <Button label={t('common.back')} onPress={onBack} variant="secondary" />
     </View>
   );
 }
@@ -319,21 +324,23 @@ function StepDate({
   onFindSlots: () => void;
   onBack: () => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.step}>
-      <Text style={styles.stepTitle}>Choose date</Text>
+      <Text style={styles.stepTitle}>{t('booking.chooseDate')}</Text>
       <FormInput
-        label="Date"
+        label={t('booking.date')}
         onChangeText={onChangeDate}
         placeholder="2026-06-26"
         value={date}
       />
       <Button
         disabled={findingSlots}
-        label={findingSlots ? 'Finding slots...' : 'Show available slots'}
+        label={findingSlots ? t('booking.findingSlots') : t('booking.showSlots')}
         onPress={onFindSlots}
       />
-      <Button label="Back" onPress={onBack} variant="secondary" />
+      <Button label={t('common.back')} onPress={onBack} variant="secondary" />
     </View>
   );
 }
@@ -349,11 +356,13 @@ function StepSlots({
   onSelect: (slot: AvailableSlot) => void;
   onBack: () => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.step}>
-      <Text style={styles.stepTitle}>Pick a slot</Text>
+      <Text style={styles.stepTitle}>{t('booking.pickSlot')}</Text>
       {slots.length === 0 ? (
-        <EmptyState message="No available slots for this choice." />
+        <EmptyState message={t('booking.noSlots')} />
       ) : (
         slots.map((slot) => (
           <TimeSlotCard
@@ -367,7 +376,7 @@ function StepSlots({
           />
         ))
       )}
-      <Button label="Back" onPress={onBack} variant="secondary" />
+      <Button label={t('common.back')} onPress={onBack} variant="secondary" />
     </View>
   );
 }
@@ -387,38 +396,42 @@ function StepCustomer({
   onConfirm: () => void;
   onBack: () => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.step}>
-      <Text style={styles.stepTitle}>Customer details</Text>
+      <Text style={styles.stepTitle}>{t('booking.customerDetails')}</Text>
       <FormInput
-        label="Customer name"
+        label={t('booking.customerName')}
         onChangeText={(value) => onChange({ customerName: value })}
         placeholder="Marko Petrovic"
         value={customerName}
       />
       <FormInput
-        label="Customer phone"
+        label={t('booking.customerPhone')}
         onChangeText={(value) => onChange({ customerPhone: value })}
         placeholder="+381641234567"
         value={customerPhone}
       />
       <Button
         disabled={booking}
-        label={booking ? 'Booking...' : 'Confirm booking'}
+        label={booking ? t('booking.booking') : t('booking.confirm')}
         onPress={onConfirm}
       />
-      <Button label="Back" onPress={onBack} variant="secondary" />
+      <Button label={t('common.back')} onPress={onBack} variant="secondary" />
     </View>
   );
 }
 
 function StepSuccess({ onNewBooking }: { onNewBooking: () => void }) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.success}>
       <CheckCircle2 color={theme.colors.success} size={42} strokeWidth={2.4} />
-      <Text style={styles.stepTitle}>Appointment booked</Text>
-      <Text style={styles.subtitle}>The customer is now on the calendar.</Text>
-      <Button label="Book another" onPress={onNewBooking} />
+      <Text style={styles.stepTitle}>{t('booking.successTitle')}</Text>
+      <Text style={styles.subtitle}>{t('booking.successSubtitle')}</Text>
+      <Button label={t('booking.bookAnother')} onPress={onNewBooking} />
     </View>
   );
 }

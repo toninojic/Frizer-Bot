@@ -1,9 +1,22 @@
-import { DayOfWeek, PrismaClient, UserRole } from '@prisma/client';
+import { DayOfWeek, FeatureKey, PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 const salonPhone = '+381641112223';
+
+const salonAnaFeatures: Record<FeatureKey, boolean> = {
+  [FeatureKey.MANUAL_BOOKING]: true,
+  [FeatureKey.AI_RECEPTIONIST]: true,
+  [FeatureKey.VOICE]: true,
+  [FeatureKey.SMS]: true,
+  [FeatureKey.WHATSAPP]: false,
+  [FeatureKey.INSTAGRAM]: false,
+  [FeatureKey.REMINDERS]: false,
+  [FeatureKey.CALL_RECORDING]: true,
+  [FeatureKey.CALL_TRANSCRIPTS]: true,
+  [FeatureKey.ANALYTICS]: false,
+};
 
 async function upsertDemoSalon() {
   const existingSalon = await prisma.salon.findFirst({
@@ -16,6 +29,7 @@ async function upsertDemoSalon() {
       data: {
         name: 'Salon Ana',
         phone: salonPhone,
+        city: 'Nis',
         timezone: 'Europe/Belgrade',
         isActive: true,
         receptionistName: 'Mila',
@@ -33,6 +47,7 @@ async function upsertDemoSalon() {
     data: {
       name: 'Salon Ana',
       phone: salonPhone,
+      city: 'Nis',
       timezone: 'Europe/Belgrade',
       isActive: true,
       receptionistName: 'Mila',
@@ -90,29 +105,61 @@ async function upsertService(
   });
 }
 
+async function upsertSalonFeature(
+  salonId: string,
+  featureKey: FeatureKey,
+  enabled: boolean,
+) {
+  return prisma.salonFeature.upsert({
+    where: {
+      salonId_featureKey: {
+        salonId,
+        featureKey,
+      },
+    },
+    update: { enabled },
+    create: {
+      salonId,
+      featureKey,
+      enabled,
+    },
+  });
+}
+
 async function main() {
   const salon = await upsertDemoSalon();
-  const passwordHash = await bcrypt.hash('password123', 12);
+  const ownerPasswordHash = await bcrypt.hash('password123', 12);
+  const platformAdminPasswordHash = await bcrypt.hash('admin123', 12);
 
-  const existingUser = await prisma.user.findFirst({
-    where: { salonId: salon.id, email: 'owner@salonana.local' },
+  await prisma.user.upsert({
+    where: { email: 'admin@platform.local' },
+    update: {
+      passwordHash: platformAdminPasswordHash,
+      role: UserRole.PLATFORM_ADMIN,
+      salonId: null,
+    },
+    create: {
+      email: 'admin@platform.local',
+      passwordHash: platformAdminPasswordHash,
+      role: UserRole.PLATFORM_ADMIN,
+      salonId: null,
+    },
   });
 
-  if (existingUser) {
-    await prisma.user.update({
-      where: { id: existingUser.id },
-      data: { passwordHash, role: UserRole.OWNER },
-    });
-  } else {
-    await prisma.user.create({
-      data: {
-        salonId: salon.id,
-        email: 'owner@salonana.local',
-        passwordHash,
-        role: UserRole.OWNER,
-      },
-    });
-  }
+  await prisma.user.upsert({
+    where: { email: 'owner@salonana.local' },
+    update: {
+      salonId: salon.id,
+      passwordHash: ownerPasswordHash,
+      role: UserRole.SALON_OWNER,
+    },
+    create: {
+      salonId: salon.id,
+      email: 'owner@salonana.local',
+      passwordHash: ownerPasswordHash,
+      role: UserRole.SALON_OWNER,
+    },
+  });
 
   await Promise.all([
     upsertWorker(salon.id, 'Ana'),
@@ -122,6 +169,12 @@ async function main() {
     upsertService(salon.id, 'Šišanje i pranje', 45),
     upsertService(salon.id, 'Farbanje', 120),
   ]);
+
+  await Promise.all(
+    Object.entries(salonAnaFeatures).map(([featureKey, enabled]) =>
+      upsertSalonFeature(salon.id, featureKey as FeatureKey, enabled),
+    ),
+  );
 
   const workingHours = [
     { dayOfWeek: DayOfWeek.MONDAY, opensAt: '09:00', closesAt: '18:00' },
@@ -159,6 +212,7 @@ async function main() {
   );
 
   console.log(`Seeded demo salon: ${salon.name} (${salon.id})`);
+  console.log('Seeded platform admin: admin@platform.local');
 }
 
 main()

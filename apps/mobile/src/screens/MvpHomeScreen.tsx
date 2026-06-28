@@ -1,25 +1,29 @@
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { AppScreen } from '../components/AppScreen';
 import { apiConfig } from '../config/api';
+import { useI18n } from '../i18n';
 
 export function MvpHomeScreen() {
+  const { t } = useI18n();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>Foundation</Text>
-        </View>
-        <Text style={styles.title}>AI Salon Receptionist MVP</Text>
-        <Text style={styles.subtitle}>Backend: {apiConfig.baseUrl}</Text>
+    <AppScreen
+      backgroundColor="#f7f5f0"
+      contentContainerStyle={styles.container}
+      scroll={false}
+    >
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>{t('mvp.foundation')}</Text>
       </View>
-    </SafeAreaView>
+      <Text style={styles.title}>{t('mvp.title')}</Text>
+      <Text style={styles.subtitle}>
+        {t('mvp.backend', { url: apiConfig.baseUrl })}
+      </Text>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f7f5f0',
-  },
   container: {
     flex: 1,
     alignItems: 'center',

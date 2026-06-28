@@ -5,6 +5,7 @@
   "scripts": {
     "build": "nest build",
     "test:booking-engine": "node --test -r ts-node/register test/booking-engine.service.spec.ts",
+    "test:conversation-engine": "node --test -r ts-node/register test/conversation-engine.service.spec.ts",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",

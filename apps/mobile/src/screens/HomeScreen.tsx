@@ -1,12 +1,12 @@
 import {
   Pressable,
-  SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { AuthUser, SalonSettings } from '../api/client';
+import { AppScreen } from '../components/AppScreen';
+import { useI18n } from '../i18n';
 
 type HomeScreenProps = {
   user: AuthUser;
@@ -31,47 +31,48 @@ export function HomeScreen({
   onOpenSettings,
   onLogout,
 }: HomeScreenProps) {
-  const receptionistName = salon.receptionistName ?? 'Receptionist';
+  const { roleLabel, t } = useI18n();
+  const receptionistName = salon.receptionistName ?? t('common.notSet');
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.topBar}>
-          <View>
-            <Text style={styles.kicker}>Signed in as {user.role}</Text>
-            <Text style={styles.title}>{salon.name}</Text>
-          </View>
-          <Pressable onPress={onLogout} style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Log out</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.summary}>
-          <Text style={styles.summaryLabel}>Receptionist</Text>
-          <Text style={styles.summaryTitle}>{receptionistName}</Text>
-          <Text style={styles.summaryText}>
-            {salon.receptionistEnabled ? 'Enabled' : 'Disabled'}
+    <AppScreen backgroundColor="#f7f7f4" contentContainerStyle={styles.container}>
+      <View style={styles.topBar}>
+        <View>
+          <Text style={styles.kicker}>
+            {t('home.signedInAs', { role: roleLabel(user.role) })}
           </Text>
+          <Text style={styles.title}>{salon.name}</Text>
         </View>
+        <Pressable onPress={onLogout} style={styles.secondaryButton}>
+          <Text style={styles.secondaryButtonText}>{t('settings.logout')}</Text>
+        </Pressable>
+      </View>
 
-        <View style={styles.today}>
-          <Text style={styles.sectionTitle}>Today</Text>
-          <Text style={styles.placeholder}>Appointments will appear here.</Text>
-        </View>
+      <View style={styles.summary}>
+        <Text style={styles.summaryLabel}>{t('home.receptionist')}</Text>
+        <Text style={styles.summaryTitle}>{receptionistName}</Text>
+        <Text style={styles.summaryText}>
+          {salon.receptionistEnabled ? t('home.enabled') : t('home.disabled')}
+        </Text>
+      </View>
 
-        <View style={styles.actions}>
-          <DashboardButton label="Today" onPress={onOpenToday} />
-          <DashboardButton label="Services" onPress={onOpenServices} />
-          <DashboardButton label="Workers" onPress={onOpenWorkers} />
-          <DashboardButton
-            label="Working Hours"
-            onPress={onOpenWorkingHours}
-          />
-          <DashboardButton label="Blocked Time" onPress={onOpenTimeBlocks} />
-          <DashboardButton label="Settings" onPress={onOpenSettings} />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <View style={styles.today}>
+        <Text style={styles.sectionTitle}>{t('nav.today')}</Text>
+        <Text style={styles.placeholder}>{t('home.appointmentsPlaceholder')}</Text>
+      </View>
+
+      <View style={styles.actions}>
+        <DashboardButton label={t('nav.today')} onPress={onOpenToday} />
+        <DashboardButton label={t('services.title')} onPress={onOpenServices} />
+        <DashboardButton label={t('workers.title')} onPress={onOpenWorkers} />
+        <DashboardButton
+          label={t('workingHours.title')}
+          onPress={onOpenWorkingHours}
+        />
+        <DashboardButton label={t('timeBlocks.title')} onPress={onOpenTimeBlocks} />
+        <DashboardButton label={t('nav.settings')} onPress={onOpenSettings} />
+      </View>
+    </AppScreen>
   );
 }
 
@@ -90,14 +91,8 @@ function DashboardButton({
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f7f7f4',
-  },
   container: {
     gap: 18,
-    padding: 20,
-    paddingBottom: 32,
   },
   topBar: {
     alignItems: 'center',

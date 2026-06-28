@@ -8,6 +8,7 @@ import {
   Settings,
   Users,
 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthUser, ApiClient, SalonSettings } from '../api/client';
 import { AddAppointmentScreen } from '../screens/AddAppointmentScreen';
 import { AppointmentDetailsScreen } from '../screens/AppointmentDetailsScreen';
@@ -20,6 +21,7 @@ import { TimeBlocksScreen } from '../screens/TimeBlocksScreen';
 import { TodayScreen } from '../screens/TodayScreen';
 import { WorkersScreen } from '../screens/WorkersScreen';
 import { WorkingHoursScreen } from '../screens/WorkingHoursScreen';
+import { useI18n } from '../i18n';
 import { theme } from '../theme/theme';
 
 type AppNavigatorProps = {
@@ -122,11 +124,15 @@ function TabNavigator({
   onLogout,
   onSalonUpdated,
 }: AppNavigatorProps) {
+  const { t } = useI18n();
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       initialRouteName="Today"
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.mutedText,
         tabBarLabelStyle: {
@@ -136,15 +142,18 @@ function TabNavigator({
         tabBarStyle: {
           backgroundColor: theme.colors.card,
           borderTopColor: theme.colors.border,
-          height: 72,
-          paddingBottom: 10,
-          paddingTop: 8,
+          height: 64 + insets.bottom,
+          paddingBottom: theme.spacing[2] + insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+          paddingTop: theme.spacing[2],
         },
       }}
     >
       <Tab.Screen
         name="Today"
         options={{
+          tabBarLabel: t('nav.today'),
           tabBarIcon: ({ color }) => (
             <CalendarDays color={color} size={22} strokeWidth={2.4} />
           ),
@@ -170,6 +179,7 @@ function TabNavigator({
       <Tab.Screen
         name="Calendar"
         options={{
+          tabBarLabel: t('nav.calendar'),
           tabBarIcon: ({ color }) => (
             <CalendarRange color={color} size={22} strokeWidth={2.4} />
           ),
@@ -191,6 +201,7 @@ function TabNavigator({
       <Tab.Screen
         name="Add"
         options={{
+          tabBarLabel: t('nav.add'),
           tabBarIcon: ({ color, focused }) => (
             <PlusCircle
               color={focused ? theme.colors.primary : color}
@@ -205,6 +216,7 @@ function TabNavigator({
       <Tab.Screen
         name="Clients"
         options={{
+          tabBarLabel: t('nav.clients'),
           tabBarIcon: ({ color }) => (
             <Users color={color} size={22} strokeWidth={2.4} />
           ),
@@ -226,6 +238,7 @@ function TabNavigator({
       <Tab.Screen
         name="Settings"
         options={{
+          tabBarLabel: t('nav.settings'),
           tabBarIcon: ({ color }) => (
             <Settings color={color} size={22} strokeWidth={2.4} />
           ),

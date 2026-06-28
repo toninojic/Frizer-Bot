@@ -9,6 +9,7 @@ import {
   DashboardNotice,
   dashboardColors,
 } from './dashboardUi';
+import { useI18n } from '../i18n';
 
 type ServicesScreenProps = {
   api: ApiClient;
@@ -28,6 +29,7 @@ const emptyForm: ServiceForm = {
 };
 
 export function ServicesScreen({ api, onBack }: ServicesScreenProps) {
+  const { mapError, t } = useI18n();
   const [services, setServices] = useState<Service[]>([]);
   const [form, setForm] = useState<ServiceForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export function ServicesScreen({ api, onBack }: ServicesScreenProps) {
     try {
       setServices(await api.services());
     } catch (loadError) {
-      setError(errorMessage(loadError));
+      setError(mapError(loadError));
     } finally {
       setLoading(false);
     }
@@ -59,7 +61,7 @@ export function ServicesScreen({ api, onBack }: ServicesScreenProps) {
   }, [api]);
 
   async function addService() {
-    const payload = servicePayload(form);
+    const payload = servicePayload(form, t);
 
     if ('error' in payload) {
       setError(payload.error);
@@ -73,10 +75,10 @@ export function ServicesScreen({ api, onBack }: ServicesScreenProps) {
     try {
       await api.createService(payload);
       setForm(emptyForm);
-      setNotice('Service saved');
+      setNotice(t('services.saved'));
       await loadServices(false);
     } catch (saveError) {
-      setError(errorMessage(saveError));
+      setError(mapError(saveError));
     } finally {
       setSaving(false);
     }
@@ -95,7 +97,7 @@ export function ServicesScreen({ api, onBack }: ServicesScreenProps) {
   }
 
   async function saveService(service: Service) {
-    const payload = servicePayload(editingForm);
+    const payload = servicePayload(editingForm, t);
 
     if ('error' in payload) {
       setError(payload.error);
@@ -110,10 +112,10 @@ export function ServicesScreen({ api, onBack }: ServicesScreenProps) {
       await api.updateService(service.id, payload);
       setEditingId(null);
       setEditingForm(emptyForm);
-      setNotice('Service updated');
+      setNotice(t('services.updated'));
       await loadServices(false);
     } catch (saveError) {
-      setError(errorMessage(saveError));
+      setError(mapError(saveError));
     } finally {
       setWorkingId(null);
     }
@@ -127,15 +129,15 @@ export function ServicesScreen({ api, onBack }: ServicesScreenProps) {
     try {
       if (isActive) {
         await api.updateService(service.id, { isActive: true });
-        setNotice('Service reactivated');
+        setNotice(t('services.reactivated'));
       } else {
         await api.deactivateService(service.id);
-        setNotice('Service deactivated');
+        setNotice(t('services.deactivated'));
       }
 
       await loadServices(false);
     } catch (saveError) {
-      setError(errorMessage(saveError));
+      setError(mapError(saveError));
     } finally {
       setWorkingId(null);
     }
@@ -147,15 +149,15 @@ export function ServicesScreen({ api, onBack }: ServicesScreenProps) {
   return (
     <DashboardLayout
       onBack={onBack}
-      subtitle="Set services and durations used by booking."
-      title="Services"
+      subtitle={t('services.subtitle')}
+      title={t('services.title')}
     >
       <ServiceFormCard
         form={form}
         onChange={setForm}
         onSubmit={addService}
         saving={saving}
-        submitLabel="Add service"
+        submitLabel={t('services.add')}
       />
 
       {error ? <DashboardNotice message={error} tone="error" /> : null}
@@ -164,7 +166,7 @@ export function ServicesScreen({ api, onBack }: ServicesScreenProps) {
       {loading ? (
         <ActivityIndicator color={dashboardColors.primary} />
       ) : services.length === 0 ? (
-        <DashboardNotice message="No services yet" />
+        <DashboardNotice message={t('services.empty')} />
       ) : (
         <View style={styles.list}>
           {activeServices.map((service) => (
@@ -183,7 +185,7 @@ export function ServicesScreen({ api, onBack }: ServicesScreenProps) {
           ))}
 
           {inactiveServices.length > 0 ? (
-            <Text style={styles.sectionLabel}>Inactive</Text>
+            <Text style={styles.sectionLabel}>{t('services.inactiveSection')}</Text>
           ) : null}
 
           {inactiveServices.map((service) => (
@@ -222,17 +224,19 @@ function ServiceFormCard({
   saving,
   submitLabel,
 }: ServiceFormCardProps) {
+  const { t } = useI18n();
+
   return (
     <DashboardCard>
       <DashboardField
-        label="Name"
+        label={t('services.name')}
         onChangeText={(name) => onChange({ ...form, name })}
         placeholder="Sisanje"
         value={form.name}
       />
       <DashboardField
         keyboardType="number-pad"
-        label="Duration minutes"
+        label={t('services.durationMinutes')}
         onChangeText={(durationMinutes) =>
           onChange({ ...form, durationMinutes })
         }
@@ -241,14 +245,14 @@ function ServiceFormCard({
       />
       <DashboardField
         keyboardType="decimal-pad"
-        label="Price optional"
+        label={t('services.priceOptional')}
         onChangeText={(priceAmount) => onChange({ ...form, priceAmount })}
         placeholder="2500"
         value={form.priceAmount}
       />
       <DashboardButton
         disabled={saving}
-        label={saving ? 'Saving...' : submitLabel}
+        label={saving ? t('common.saving') : submitLabel}
         onPress={onSubmit}
       />
     </DashboardCard>
@@ -280,6 +284,7 @@ function ServiceCard({
   onDeactivate,
   onReactivate,
 }: ServiceCardProps) {
+  const { t } = useI18n();
   const isEditing = editingId === service.id;
 
   return (
@@ -287,7 +292,7 @@ function ServiceCard({
       {isEditing ? (
         <>
           <DashboardField
-            label="Name"
+            label={t('services.name')}
             onChangeText={(name) =>
               onSetEditingForm({ ...editingForm, name })
             }
@@ -295,7 +300,7 @@ function ServiceCard({
           />
           <DashboardField
             keyboardType="number-pad"
-            label="Duration minutes"
+            label={t('services.durationMinutes')}
             onChangeText={(durationMinutes) =>
               onSetEditingForm({ ...editingForm, durationMinutes })
             }
@@ -303,7 +308,7 @@ function ServiceCard({
           />
           <DashboardField
             keyboardType="decimal-pad"
-            label="Price optional"
+            label={t('services.priceOptional')}
             onChangeText={(priceAmount) =>
               onSetEditingForm({ ...editingForm, priceAmount })
             }
@@ -317,12 +322,12 @@ function ServiceCard({
             <Text style={styles.serviceMeta}>
               {service.durationMinutes} min
               {service.priceAmount !== null
-                ? ` · ${formatPrice(service.priceAmount)}`
+                ? ` - ${formatPrice(service.priceAmount)}`
                 : ''}
             </Text>
           </View>
           <Text style={[styles.status, !service.isActive ? styles.inactive : null]}>
-            {service.isActive ? 'Active' : 'Inactive'}
+            {service.isActive ? t('common.active') : t('common.inactive')}
           </Text>
         </View>
       )}
@@ -332,30 +337,30 @@ function ServiceCard({
           <>
             <DashboardButton
               disabled={working}
-              label={working ? 'Saving...' : 'Save'}
+              label={working ? t('common.saving') : t('common.save')}
               onPress={onSave}
             />
             <DashboardButton
               disabled={working}
-              label="Cancel"
+              label={t('common.cancel')}
               onPress={onCancelEditing}
               variant="secondary"
             />
           </>
         ) : (
           <>
-            <DashboardButton label="Edit" onPress={onEdit} variant="secondary" />
+            <DashboardButton label={t('common.edit')} onPress={onEdit} variant="secondary" />
             {service.isActive ? (
               <DashboardButton
                 disabled={working}
-                label={working ? 'Saving...' : 'Deactivate'}
+                label={working ? t('common.saving') : t('services.deactivate')}
                 onPress={onDeactivate}
                 variant="danger"
               />
             ) : (
               <DashboardButton
                 disabled={working}
-                label={working ? 'Saving...' : 'Reactivate'}
+                label={working ? t('common.saving') : t('services.reactivate')}
                 onPress={onReactivate}
               />
             )}
@@ -366,7 +371,10 @@ function ServiceCard({
   );
 }
 
-function servicePayload(form: ServiceForm):
+function servicePayload(
+  form: ServiceForm,
+  t: ReturnType<typeof useI18n>['t'],
+):
   | {
       name: string;
       durationMinutes: number;
@@ -379,15 +387,15 @@ function servicePayload(form: ServiceForm):
     form.priceAmount.trim() === '' ? null : Number(form.priceAmount);
 
   if (!name) {
-    return { error: 'Service name is required' };
+    return { error: t('services.nameRequired') };
   }
 
   if (!Number.isInteger(durationMinutes) || durationMinutes <= 0) {
-    return { error: 'Duration must be a positive number of minutes' };
+    return { error: t('services.durationInvalid') };
   }
 
   if (priceAmount !== null && (!Number.isFinite(priceAmount) || priceAmount <= 0)) {
-    return { error: 'Price must be positive when provided' };
+    return { error: t('services.priceInvalid') };
   }
 
   return {
@@ -399,10 +407,6 @@ function servicePayload(form: ServiceForm):
 
 function formatPrice(priceAmount: number) {
   return `${priceAmount.toLocaleString()} RSD`;
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Something went wrong';
 }
 
 const styles = StyleSheet.create({

@@ -4,12 +4,12 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   role: UserRole;
-  salonId: string;
+  salonId: string | null;
 }
 
 export interface JwtPayload {
   sub: string;
   email: string;
   role: UserRole;
-  salonId: string;
+  salonId: string | null;
 }

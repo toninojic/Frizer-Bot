@@ -1,22 +1,25 @@
 import { Controller, Get, NotFoundException, Param, UseGuards } from '@nestjs/common';
-import { AuthenticatedUser } from '../auth/auth.types';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserRole } from '@prisma/client';
+import { CurrentSalonId } from '../auth/decorators/current-salon-id.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { SalonsService } from './salons.service';
 
-@UseGuards(JwtAuthGuard)
+@Roles(UserRole.SALON_OWNER)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('salons')
 export class SalonsController {
   constructor(private readonly salonsService: SalonsService) {}
 
   @Get()
-  async findAll(@CurrentUser() user: AuthenticatedUser) {
-    return [await this.salonsService.findOne(user.salonId)];
+  async findAll(@CurrentSalonId() salonId: string) {
+    return [await this.salonsService.findOne(salonId)];
   }
 
   @Get(':id')
-  findOne(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    if (id !== user.salonId) {
+  findOne(@CurrentSalonId() salonId: string, @Param('id') id: string) {
+    if (id !== salonId) {
       throw new NotFoundException('Salon not found');
     }
 

@@ -1,56 +1,83 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { AuthenticatedUser } from '../auth/auth.types';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { FeatureKey, UserRole } from '@prisma/client';
+import { CurrentSalonId } from '../auth/decorators/current-salon-id.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { FeatureFlagsService } from '../feature-flags/feature-flags.service';
 import { BookingEngineService } from './booking-engine.service';
 import { AvailableSlotsDto } from './dto/available-slots.dto';
 import { BookAppointmentDto } from './dto/book-appointment.dto';
 import { CancelBookingDto } from './dto/cancel-booking.dto';
 import { RescheduleBookingDto } from './dto/reschedule-booking.dto';
 
-@UseGuards(JwtAuthGuard)
+@Roles(UserRole.SALON_OWNER)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('dashboard/booking')
 export class DashboardBookingController {
-  constructor(private readonly bookingEngineService: BookingEngineService) {}
+  constructor(
+    private readonly bookingEngineService: BookingEngineService,
+    private readonly featureFlagsService: FeatureFlagsService,
+  ) {}
 
   @Get('available-slots')
-  findAvailableSlots(
-    @CurrentUser() user: AuthenticatedUser,
+  async findAvailableSlots(
+    @CurrentSalonId() salonId: string,
     @Query() dto: AvailableSlotsDto,
   ) {
-    return this.bookingEngineService.findAvailableSlots(user.salonId, dto);
+    await this.featureFlagsService.requireFeature(
+      salonId,
+      FeatureKey.MANUAL_BOOKING,
+    );
+
+    return this.bookingEngineService.findAvailableSlots(salonId, dto);
   }
 
   @Post('book')
-  book(
-    @CurrentUser() user: AuthenticatedUser,
+  async book(
+    @CurrentSalonId() salonId: string,
     @Body() dto: BookAppointmentDto,
   ) {
+    await this.featureFlagsService.requireFeature(
+      salonId,
+      FeatureKey.MANUAL_BOOKING,
+    );
+
     return this.bookingEngineService.createBooking({
       ...dto,
-      salonId: user.salonId,
+      salonId,
     });
   }
 
   @Post('cancel')
-  cancel(
-    @CurrentUser() user: AuthenticatedUser,
+  async cancel(
+    @CurrentSalonId() salonId: string,
     @Body() dto: CancelBookingDto,
   ) {
+    await this.featureFlagsService.requireFeature(
+      salonId,
+      FeatureKey.MANUAL_BOOKING,
+    );
+
     return this.bookingEngineService.cancelBooking({
       ...dto,
-      salonId: user.salonId,
+      salonId,
     });
   }
 
   @Post('reschedule')
-  reschedule(
-    @CurrentUser() user: AuthenticatedUser,
+  async reschedule(
+    @CurrentSalonId() salonId: string,
     @Body() dto: RescheduleBookingDto,
   ) {
+    await this.featureFlagsService.requireFeature(
+      salonId,
+      FeatureKey.MANUAL_BOOKING,
+    );
+
     return this.bookingEngineService.rescheduleBooking({
       ...dto,
-      salonId: user.salonId,
+      salonId,
     });
   }
 }

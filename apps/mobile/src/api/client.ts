@@ -3,8 +3,8 @@ import { apiConfig } from '../config/api';
 export type AuthUser = {
   id: string;
   email: string;
-  role: 'OWNER' | 'ADMIN';
-  salonId: string;
+  role: 'PLATFORM_ADMIN' | 'SALON_OWNER';
+  salonId: string | null;
 };
 
 export type LoginResponse = {
@@ -80,6 +80,36 @@ export type AppointmentStatus = 'BOOKED' | 'CANCELLED' | 'COMPLETED';
 
 export type BookingChannel = 'MANUAL' | 'PHONE' | 'WHATSAPP' | 'INSTAGRAM';
 
+export type FeatureKey =
+  | 'MANUAL_BOOKING'
+  | 'AI_RECEPTIONIST'
+  | 'VOICE'
+  | 'SMS'
+  | 'WHATSAPP'
+  | 'INSTAGRAM'
+  | 'REMINDERS'
+  | 'CALL_RECORDING'
+  | 'CALL_TRANSCRIPTS'
+  | 'ANALYTICS';
+
+export const FEATURE_KEYS: FeatureKey[] = [
+  'MANUAL_BOOKING',
+  'AI_RECEPTIONIST',
+  'VOICE',
+  'SMS',
+  'WHATSAPP',
+  'INSTAGRAM',
+  'REMINDERS',
+  'CALL_RECORDING',
+  'CALL_TRANSCRIPTS',
+  'ANALYTICS',
+];
+
+export type SalonFeature = {
+  featureKey: FeatureKey;
+  enabled: boolean;
+};
+
 export type Appointment = {
   id: string;
   salonId: string;
@@ -124,6 +154,80 @@ export type RecentCall = {
   durationSeconds: number | null;
   outcome: string;
 };
+
+export type PlatformOverview = {
+  totalSalons: number;
+  activeSalons: number;
+  totalAppointmentsToday: number;
+  totalCallsToday: number;
+  totalSmsThisMonth: number;
+};
+
+export type PlatformSalonSummary = {
+  id: string;
+  name: string;
+  phone: string;
+  city: string | null;
+  isActive: boolean;
+  receptionistEnabled: boolean;
+  workersCount: number;
+  servicesCount: number;
+  appointmentsToday: number;
+  callsToday: number;
+  createdAt: string;
+};
+
+export type PlatformSalonDetails = {
+  id: string;
+  name: string;
+  phone: string;
+  city: string | null;
+  timezone: string;
+  isActive: boolean;
+  receptionistName: string | null;
+  receptionistEnabled: boolean;
+  transferPhone: string | null;
+  workingAfterHoursEnabled: boolean;
+  smsConfirmationsEnabled: boolean;
+  reminderHoursBefore: number;
+  createdAt: string;
+  workers: Worker[];
+  services: Service[];
+  workingHours: WorkingHour[];
+  usage: {
+    appointmentsToday: number;
+    appointmentsThisMonth: number;
+    callsToday: number;
+    callsThisMonth: number;
+    smsThisMonth: number;
+  };
+};
+
+export type CreatePlatformSalonInput = {
+  name: string;
+  phone: string;
+  city?: string;
+  ownerEmail: string;
+  ownerPassword: string;
+  timezone: string;
+};
+
+export type UpdatePlatformSalonInput = Partial<
+  Pick<
+    PlatformSalonDetails,
+    | 'name'
+    | 'phone'
+    | 'city'
+    | 'timezone'
+    | 'isActive'
+    | 'receptionistName'
+    | 'receptionistEnabled'
+    | 'transferPhone'
+    | 'workingAfterHoursEnabled'
+    | 'smsConfirmationsEnabled'
+    | 'reminderHoursBefore'
+  >
+>;
 
 type ApiClientOptions = {
   getAccessToken: () => string | null;
@@ -172,6 +276,7 @@ export function createApiClient(options: ApiClientOptions) {
 
     if (!response.ok) {
       const message =
+        data?.code ??
         data?.message ??
         data?.error ??
         `Request failed with status ${response.status}`;
@@ -206,6 +311,43 @@ export function createApiClient(options: ApiClientOptions) {
     },
     recentCalls() {
       return request<RecentCall[]>('/dashboard/calls/recent');
+    },
+    dashboardFeatures() {
+      return request<SalonFeature[]>('/dashboard/features');
+    },
+    adminOverview() {
+      return request<PlatformOverview>('/admin/overview');
+    },
+    adminSalons() {
+      return request<PlatformSalonSummary[]>('/admin/salons');
+    },
+    adminSalon(id: string) {
+      return request<PlatformSalonDetails>(`/admin/salons/${id}`);
+    },
+    createAdminSalon(body: CreatePlatformSalonInput) {
+      return request<PlatformSalonDetails>('/admin/salons', {
+        method: 'POST',
+        body,
+      });
+    },
+    updateAdminSalon(id: string, body: UpdatePlatformSalonInput) {
+      return request<PlatformSalonDetails>(`/admin/salons/${id}`, {
+        method: 'PATCH',
+        body,
+      });
+    },
+    adminSalonFeatures(id: string) {
+      return request<SalonFeature[]>(`/admin/salons/${id}/features`);
+    },
+    updateAdminSalonFeature(
+      id: string,
+      featureKey: FeatureKey,
+      enabled: boolean,
+    ) {
+      return request<SalonFeature>(`/admin/salons/${id}/features/${featureKey}`, {
+        method: 'PATCH',
+        body: { enabled },
+      });
     },
     workers() {
       return request<Worker[]>('/dashboard/workers');

@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { AlertCircle, Inbox } from 'lucide-react-native';
+import { useI18n } from '../i18n';
 import { theme } from '../theme/theme';
 import { Button } from './Button';
 
@@ -11,38 +12,44 @@ type StateProps = {
   onAction?: () => void;
 };
 
-export function LoadingState({ message = 'Loading...' }: { message?: string }) {
+export function LoadingState({ message }: { message?: string }) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.state}>
       <ActivityIndicator color={theme.colors.primary} />
-      <Text style={styles.message}>{message}</Text>
+      <Text style={styles.message}>{message ?? t('common.loading')}</Text>
     </View>
   );
 }
 
 export function EmptyState({
-  title = 'Nothing here yet',
+  title,
   message,
   actionLabel,
   onAction,
 }: StateProps) {
+  const { t } = useI18n();
+
   return (
-    <StateShell icon={Inbox} title={title} message={message}>
+    <StateShell icon={Inbox} title={title ?? t('state.emptyTitle')} message={message}>
       {actionLabel ? <Button label={actionLabel} onPress={onAction} /> : null}
     </StateShell>
   );
 }
 
 export function ErrorState({
-  title = 'Something went wrong',
+  title,
   message,
-  actionLabel = 'Try again',
+  actionLabel,
   onAction,
 }: StateProps) {
+  const { t } = useI18n();
+
   return (
-    <StateShell icon={AlertCircle} title={title} message={message}>
+    <StateShell icon={AlertCircle} title={title ?? t('state.errorTitle')} message={message}>
       {onAction ? (
-        <Button label={actionLabel} onPress={onAction} variant="secondary" />
+        <Button label={actionLabel ?? t('common.tryAgain')} onPress={onAction} variant="secondary" />
       ) : null}
     </StateShell>
   );

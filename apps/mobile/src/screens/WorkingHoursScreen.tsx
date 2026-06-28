@@ -9,20 +9,21 @@ import {
   DashboardNotice,
   dashboardColors,
 } from './dashboardUi';
+import { useI18n } from '../i18n';
 
 type WorkingHoursScreenProps = {
   api: ApiClient;
   onBack: () => void;
 };
 
-const days: Array<{ dayOfWeek: DayOfWeek; label: string }> = [
-  { dayOfWeek: 'MONDAY', label: 'Monday' },
-  { dayOfWeek: 'TUESDAY', label: 'Tuesday' },
-  { dayOfWeek: 'WEDNESDAY', label: 'Wednesday' },
-  { dayOfWeek: 'THURSDAY', label: 'Thursday' },
-  { dayOfWeek: 'FRIDAY', label: 'Friday' },
-  { dayOfWeek: 'SATURDAY', label: 'Saturday' },
-  { dayOfWeek: 'SUNDAY', label: 'Sunday' },
+const days: DayOfWeek[] = [
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+  'SUNDAY',
 ];
 
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -31,6 +32,7 @@ export function WorkingHoursScreen({
   api,
   onBack,
 }: WorkingHoursScreenProps) {
+  const { dayLabel, mapError, t } = useI18n();
   const [hours, setHours] = useState<WorkingHour[]>(defaultHours());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,7 +46,7 @@ export function WorkingHoursScreen({
     try {
       setHours(mergeHours(await api.workingHours()));
     } catch (loadError) {
-      setError(errorMessage(loadError));
+      setError(mapError(loadError));
     } finally {
       setLoading(false);
     }
@@ -84,7 +86,7 @@ export function WorkingHoursScreen({
   }
 
   async function saveHours() {
-    const validationError = validateHours(hours);
+    const validationError = validateHours(hours, dayLabel, t);
 
     if (validationError) {
       setError(validationError);
@@ -97,9 +99,9 @@ export function WorkingHoursScreen({
 
     try {
       setHours(mergeHours(await api.replaceWorkingHours(hours)));
-      setNotice('Working hours saved');
+      setNotice(t('workingHours.saved'));
     } catch (saveError) {
-      setError(errorMessage(saveError));
+      setError(mapError(saveError));
     } finally {
       setSaving(false);
     }
@@ -108,8 +110,8 @@ export function WorkingHoursScreen({
   return (
     <DashboardLayout
       onBack={onBack}
-      subtitle="Set opening hours for each day."
-      title="Working Hours"
+      subtitle={t('workingHours.subtitle')}
+      title={t('workingHours.title')}
     >
       {error ? <DashboardNotice message={error} tone="error" /> : null}
       {notice ? <DashboardNotice message={notice} tone="success" /> : null}
@@ -126,19 +128,19 @@ export function WorkingHoursScreen({
                     {dayLabel(workingHour.dayOfWeek)}
                   </Text>
                   <DashboardButton
-                    label={workingHour.isClosed ? 'Closed' : 'Open'}
+                    label={workingHour.isClosed ? t('common.closed') : t('common.open')}
                     onPress={() => toggleClosed(workingHour)}
                     variant={workingHour.isClosed ? 'secondary' : 'primary'}
                   />
                 </View>
 
                 {workingHour.isClosed ? (
-                  <Text style={styles.closedText}>Closed all day</Text>
+                  <Text style={styles.closedText}>{t('common.closedAllDay')}</Text>
                 ) : (
                   <View style={styles.timeRow}>
                     <View style={styles.timeField}>
                       <DashboardField
-                        label="Opens"
+                        label={t('workingHours.opens')}
                         onChangeText={(opensAt) =>
                           updateDay(workingHour.dayOfWeek, { opensAt })
                         }
@@ -148,7 +150,7 @@ export function WorkingHoursScreen({
                     </View>
                     <View style={styles.timeField}>
                       <DashboardField
-                        label="Closes"
+                        label={t('workingHours.closes')}
                         onChangeText={(closesAt) =>
                           updateDay(workingHour.dayOfWeek, { closesAt })
                         }
@@ -164,7 +166,7 @@ export function WorkingHoursScreen({
 
           <DashboardButton
             disabled={saving}
-            label={saving ? 'Saving...' : 'Save all changes'}
+            label={saving ? t('common.saving') : t('workingHours.saveAll')}
             onPress={saveHours}
           />
         </>
@@ -174,7 +176,7 @@ export function WorkingHoursScreen({
 }
 
 function defaultHours() {
-  return days.map(({ dayOfWeek }) => ({
+  return days.map((dayOfWeek) => ({
     dayOfWeek,
     opensAt: dayOfWeek === 'SUNDAY' ? null : '09:00',
     closesAt: dayOfWeek === 'SUNDAY' ? null : '18:00',
@@ -194,37 +196,39 @@ function mergeHours(apiHours: WorkingHour[]) {
   }));
 }
 
-function validateHours(hours: WorkingHour[]) {
+function validateHours(
+  hours: WorkingHour[],
+  dayLabel: (dayOfWeek: DayOfWeek) => string,
+  t: ReturnType<typeof useI18n>['t'],
+) {
   for (const workingHour of hours) {
     if (workingHour.isClosed) {
       continue;
     }
 
     if (!workingHour.opensAt || !workingHour.closesAt) {
-      return `${dayLabel(workingHour.dayOfWeek)} needs open and close time`;
+      return t('workingHours.needsTimes', {
+        day: dayLabel(workingHour.dayOfWeek),
+      });
     }
 
     if (
       !timePattern.test(workingHour.opensAt) ||
       !timePattern.test(workingHour.closesAt)
     ) {
-      return `${dayLabel(workingHour.dayOfWeek)} must use HH:mm time`;
+      return t('workingHours.mustUseFormat', {
+        day: dayLabel(workingHour.dayOfWeek),
+      });
     }
 
     if (workingHour.closesAt <= workingHour.opensAt) {
-      return `${dayLabel(workingHour.dayOfWeek)} close time must be after open time`;
+      return t('workingHours.closeAfterOpen', {
+        day: dayLabel(workingHour.dayOfWeek),
+      });
     }
   }
 
   return '';
-}
-
-function dayLabel(dayOfWeek: DayOfWeek) {
-  return days.find((day) => day.dayOfWeek === dayOfWeek)?.label ?? dayOfWeek;
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Something went wrong';
 }
 
 const styles = StyleSheet.create({

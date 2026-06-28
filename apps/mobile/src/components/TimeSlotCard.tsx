@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { AvailableSlot } from '../api/client';
-import { formatTime } from '../utils/date';
+import { useI18n } from '../i18n';
 import { SelectCard } from './SelectCard';
 
 type TimeSlotCardProps = {
@@ -10,6 +10,8 @@ type TimeSlotCardProps = {
 };
 
 export function TimeSlotCard({ slot, selected, onPress }: TimeSlotCardProps) {
+  const { formatTime } = useI18n();
+
   return (
     <SelectCard
       onPress={onPress}

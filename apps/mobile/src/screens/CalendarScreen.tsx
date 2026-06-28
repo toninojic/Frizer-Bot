@@ -17,9 +17,9 @@ import { Card } from '../components/Card';
 import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { IconButton } from '../components/IconButton';
 import { SectionHeader } from '../components/SectionHeader';
+import { useI18n } from '../i18n';
 import { theme } from '../theme/theme';
-import { addDays, formatDateInput, formatReadableDate, formatTime } from '../utils/date';
-import { errorMessage } from '../utils/formatting';
+import { addDays, formatDateInput } from '../utils/date';
 
 type CalendarScreenProps = {
   api: ApiClient;
@@ -34,6 +34,7 @@ export function CalendarScreen({
   user,
   onOpenAppointment,
 }: CalendarScreenProps) {
+  const { formatReadableDate, formatTime, mapError, t } = useI18n();
   const [date, setDate] = useState(formatDateInput(new Date()));
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
@@ -51,7 +52,7 @@ export function CalendarScreen({
       setAppointments(appointmentsResponse);
       setWorkers(workersResponse);
     } catch (loadError) {
-      setError(errorMessage(loadError));
+      setError(mapError(loadError));
     } finally {
       setLoading(false);
     }
@@ -78,7 +79,7 @@ export function CalendarScreen({
       <View style={styles.dateRow}>
         <IconButton
           icon={ChevronLeft}
-          label="Previous day"
+          label={t('calendar.previousDay')}
           onPress={() => setDate(addDays(date, -1))}
         />
         <View style={styles.dateTextWrap}>
@@ -87,22 +88,22 @@ export function CalendarScreen({
         </View>
         <IconButton
           icon={ChevronRight}
-          label="Next day"
+          label={t('calendar.nextDay')}
           onPress={() => setDate(addDays(date, 1))}
         />
       </View>
       <Button
-        label="Today"
+        label={t('calendar.today')}
         onPress={() => setDate(formatDateInput(new Date()))}
         variant="secondary"
       />
 
       {loading ? (
-        <LoadingState message="Loading calendar..." />
+        <LoadingState message={t('calendar.loading')} />
       ) : error ? (
         <ErrorState message={error} onAction={loadCalendar} />
       ) : appointments.length === 0 ? (
-        <EmptyState message="No appointments for this day." />
+        <EmptyState message={t('calendar.empty')} />
       ) : hasMultipleWorkers ? (
         <View style={styles.section}>
           {activeWorkers.map((worker) => {
@@ -124,7 +125,10 @@ export function CalendarScreen({
                         {formatTime(appointment.startAt)}
                       </Text>
                       <Text style={styles.timelineText}>
-                        {appointment.customerName} - {appointment.serviceName}
+                        {t('calendar.appointmentLine', {
+                          customer: appointment.customerName,
+                          service: appointment.serviceName,
+                        })}
                       </Text>
                     </View>
                   ))}

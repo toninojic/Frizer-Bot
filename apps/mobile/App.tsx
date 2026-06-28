@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthUser, createApiClient, SalonSettings } from './src/api/client';
 import {
@@ -10,6 +10,9 @@ import {
 } from './src/auth/tokenStorage';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { PlatformAdminNavigator } from './src/navigation/PlatformAdminNavigator';
+import { I18nProvider } from './src/i18n';
+import { AppScreen } from './src/components/AppScreen';
 import { theme } from './src/theme/theme';
 
 export default function App() {
@@ -39,10 +42,9 @@ export default function App() {
       getAccessToken: () => token,
       onUnauthorized: resetSession,
     });
-    const [me, settings] = await Promise.all([
-      sessionApi.me(),
-      sessionApi.salonSettings(),
-    ]);
+    const me = await sessionApi.me();
+    const settings =
+      me.role === 'SALON_OWNER' ? await sessionApi.salonSettings() : null;
 
     setAccessToken(token);
     setUser(me);
@@ -85,11 +87,19 @@ export default function App() {
 
   if (loading) {
     content = (
-      <View style={styles.loading}>
+      <AppScreen contentContainerStyle={styles.loading} scroll={false}>
         <ActivityIndicator color={theme.colors.primary} size="large" />
-      </View>
+      </AppScreen>
     );
-  } else if (accessToken && user && salon) {
+  } else if (accessToken && user?.role === 'PLATFORM_ADMIN') {
+    content = (
+      <PlatformAdminNavigator
+        api={api}
+        onLogout={resetSession}
+        user={user}
+      />
+    );
+  } else if (accessToken && user?.role === 'SALON_OWNER' && salon) {
     content = (
       <AppNavigator
         api={api}
@@ -103,8 +113,10 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      {content}
-      <StatusBar style="dark" />
+      <I18nProvider>
+        {content}
+        <StatusBar style="dark" />
+      </I18nProvider>
     </SafeAreaProvider>
   );
 }
@@ -112,7 +124,6 @@ export default function App() {
 const styles = StyleSheet.create({
   loading: {
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
     flex: 1,
     justifyContent: 'center',
   },

@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
+import { UserRole } from '@prisma/client';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthenticatedUser, JwtPayload } from '../auth.types';
@@ -25,10 +26,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
-    const user = await this.prisma.user.findFirst({
+    const user = await this.prisma.user.findUnique({
       where: {
         id: payload.sub,
-        salonId: payload.salonId,
       },
       select: {
         id: true,
@@ -39,6 +39,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
 
     if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    const roleConfigurationIsInvalid =
+      (user.role === UserRole.PLATFORM_ADMIN && user.salonId !== null) ||
+      (user.role === UserRole.SALON_OWNER && user.salonId === null);
+
+    if (
+      roleConfigurationIsInvalid ||
+      user.role !== payload.role ||
+      user.salonId !== payload.salonId
+    ) {
       throw new UnauthorizedException();
     }
 

@@ -7,9 +7,9 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { StatusBadge } from '../components/StatusBadge';
+import { useI18n } from '../i18n';
 import { theme } from '../theme/theme';
-import { formatReadableDate, formatTime } from '../utils/date';
-import { errorMessage, formatPhone } from '../utils/formatting';
+import { formatPhone } from '../utils/formatting';
 
 type AppointmentDetailsScreenProps = {
   api: ApiClient;
@@ -22,6 +22,14 @@ export function AppointmentDetailsScreen({
   appointmentId,
   onBack,
 }: AppointmentDetailsScreenProps) {
+  const {
+    channelLabel,
+    formatReadableDate,
+    formatTime,
+    mapError,
+    statusLabel,
+    t,
+  } = useI18n();
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,7 +43,7 @@ export function AppointmentDetailsScreen({
     try {
       setAppointment(await api.appointment(appointmentId));
     } catch (loadError) {
-      setError(errorMessage(loadError));
+      setError(mapError(loadError));
     } finally {
       setLoading(false);
     }
@@ -52,9 +60,9 @@ export function AppointmentDetailsScreen({
 
     try {
       setAppointment(await api.cancelBooking({ appointmentId: appointment.id }));
-      setNotice('Appointment cancelled');
+      setNotice(t('appointment.cancelledNotice'));
     } catch (cancelError) {
-      setError(errorMessage(cancelError));
+      setError(mapError(cancelError));
     } finally {
       setSaving(false);
     }
@@ -66,9 +74,9 @@ export function AppointmentDetailsScreen({
 
   return (
     <AppScreen>
-      <Button label="Back" onPress={onBack} variant="secondary" />
+      <Button label={t('common.back')} onPress={onBack} variant="secondary" />
       {loading ? (
-        <LoadingState message="Loading appointment..." />
+        <LoadingState message={t('appointment.loading')} />
       ) : error ? (
         <ErrorState message={error} onAction={loadAppointment} />
       ) : appointment ? (
@@ -76,23 +84,23 @@ export function AppointmentDetailsScreen({
           <View style={styles.titleBlock}>
             <Text style={styles.screenTitle}>{appointment.customerName}</Text>
             <Text style={styles.subtitle}>
-              {formatReadableDate(appointment.startAt.slice(0, 10))} ·{' '}
+              {formatReadableDate(appointment.startAt.slice(0, 10))},{' '}
               {formatTime(appointment.startAt)}-{formatTime(appointment.endAt)}
             </Text>
           </View>
 
           <Card>
             <View style={styles.statusRow}>
-              <Text style={styles.cardTitle}>Appointment</Text>
+              <Text style={styles.cardTitle}>{t('appointment.title')}</Text>
               <StatusBadge
-                label={appointment.status}
+                label={statusLabel(appointment.status)}
                 tone={appointment.status === 'CANCELLED' ? 'danger' : 'success'}
               />
             </View>
-            <DetailRow label="Phone" value={formatPhone(appointment.customerPhone)} />
-            <DetailRow label="Service" value={appointment.serviceName} />
-            <DetailRow label="Worker" value={appointment.workerName} />
-            <DetailRow label="Channel" value={appointment.channel} />
+            <DetailRow label={t('appointment.phone')} value={formatPhone(appointment.customerPhone)} />
+            <DetailRow label={t('appointment.service')} value={appointment.serviceName} />
+            <DetailRow label={t('appointment.worker')} value={appointment.workerName} />
+            <DetailRow label={t('appointment.channel')} value={channelLabel(appointment.channel)} />
           </Card>
 
           {notice ? <Text style={styles.notice}>{notice}</Text> : null}
@@ -100,17 +108,17 @@ export function AppointmentDetailsScreen({
           <View style={styles.actions}>
             <Button
               disabled={saving || appointment.status !== 'BOOKED'}
-              label={saving ? 'Cancelling...' : 'Cancel appointment'}
+              label={saving ? t('appointment.cancelling') : t('appointment.cancel')}
               onPress={cancelAppointment}
               variant="danger"
             />
-            <Button icon={RotateCcw} label="Reschedule soon" variant="secondary" />
-            <Button icon={Phone} label="Call soon" variant="secondary" />
-            <Button icon={Send} label="SMS soon" variant="secondary" />
+            <Button icon={RotateCcw} label={t('appointment.rescheduleSoon')} variant="secondary" />
+            <Button icon={Phone} label={t('appointment.callSoon')} variant="secondary" />
+            <Button icon={Send} label={t('appointment.smsSoon')} variant="secondary" />
           </View>
         </>
       ) : (
-        <EmptyState message="Appointment not found." />
+        <EmptyState message={t('appointment.notFound')} />
       )}
     </AppScreen>
   );

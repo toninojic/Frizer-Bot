@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useI18n } from '../i18n';
 import { theme } from '../theme/theme';
 import { StatusBadge } from './StatusBadge';
 
@@ -9,6 +10,8 @@ type AppHeaderProps = {
 };
 
 export function AppHeader({ salonName, userEmail, aiEnabled }: AppHeaderProps) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.header}>
       <View style={styles.textWrap}>
@@ -16,7 +19,7 @@ export function AppHeader({ salonName, userEmail, aiEnabled }: AppHeaderProps) {
         <Text style={styles.email}>{userEmail}</Text>
       </View>
       <StatusBadge
-        label={aiEnabled ? 'AI Active' : 'AI Paused'}
+        label={aiEnabled ? t('ai.active') : t('ai.paused')}
         tone={aiEnabled ? 'success' : 'danger'}
       />
     </View>

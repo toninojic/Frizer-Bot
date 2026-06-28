@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { AppScreen } from '../components/AppScreen';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { FormInput } from '../components/FormInput';
+import { useI18n } from '../i18n';
 import { theme } from '../theme/theme';
 
 type LoginScreenProps = {
@@ -11,6 +12,7 @@ type LoginScreenProps = {
 };
 
 export function LoginScreen({ onLogin }: LoginScreenProps) {
+  const { mapError, t } = useI18n();
   const [email, setEmail] = useState('owner@salonana.local');
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState('');
@@ -23,61 +25,48 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     try {
       await onLogin(email.trim(), password);
     } catch (loginError) {
-      setError(
-        loginError instanceof Error ? loginError.message : 'Login failed',
-      );
+      setError(mapError(loginError) || t('login.failed'));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.keyboard}
-    >
-      <AppScreen>
-        <View style={styles.hero}>
-          <View style={styles.mark}>
-            <Text style={styles.markText}>AI</Text>
-          </View>
-          <Text style={styles.title}>Salon dashboard</Text>
-          <Text style={styles.subtitle}>
-            Manage today, bookings, clients, and receptionist settings.
-          </Text>
+    <AppScreen>
+      <View style={styles.hero}>
+        <View style={styles.mark}>
+          <Text style={styles.markText}>AI</Text>
         </View>
+        <Text style={styles.title}>{t('login.title')}</Text>
+        <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
+      </View>
 
-        <Card>
-          <FormInput
-            label="Email"
-            onChangeText={setEmail}
-            placeholder="owner@salon.local"
-            value={email}
-          />
-          <FormInput
-            label="Password"
-            onChangeText={setPassword}
-            placeholder="password"
-            secureTextEntry
-            value={password}
-          />
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Button
-            disabled={loading}
-            label={loading ? 'Logging in...' : 'Log in'}
-            onPress={handleLogin}
-          />
-        </Card>
-      </AppScreen>
-    </KeyboardAvoidingView>
+      <Card>
+        <FormInput
+          label={t('login.email')}
+          onChangeText={setEmail}
+          placeholder={t('login.placeholderEmail')}
+          value={email}
+        />
+        <FormInput
+          label={t('login.password')}
+          onChangeText={setPassword}
+          placeholder={t('login.placeholderPassword')}
+          secureTextEntry
+          value={password}
+        />
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <Button
+          disabled={loading}
+          label={loading ? t('login.loading') : t('login.button')}
+          onPress={handleLogin}
+        />
+      </Card>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboard: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   hero: {
     gap: theme.spacing[3],
     paddingTop: theme.spacing[8],

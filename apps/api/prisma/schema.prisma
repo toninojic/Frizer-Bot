@@ -8,8 +8,8 @@ datasource db {
 }
 
 enum UserRole {
-  OWNER
-  ADMIN
+  PLATFORM_ADMIN
+  SALON_OWNER
 }
 
 enum AppointmentStatus {
@@ -23,6 +23,72 @@ enum BookingChannel {
   PHONE
   WHATSAPP
   INSTAGRAM
+}
+
+enum ConversationChannel {
+  MANUAL
+  PHONE
+  WHATSAPP
+  INSTAGRAM
+  WEB_CHAT
+}
+
+enum ConversationSessionStatus {
+  ACTIVE
+  COMPLETED
+  TRANSFERRED
+  FAILED
+}
+
+enum ConversationMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  TOOL
+}
+
+enum ConversationState {
+  START
+  GREETING
+  INTENT_DETECTION
+  BOOKING_SERVICE
+  BOOKING_WORKER
+  BOOKING_DATE_TIME
+  BOOKING_SLOT_CONFIRMATION
+  BOOKING_CUSTOMER_NAME
+  BOOKING_FINAL_CONFIRMATION
+  BOOKING_COMPLETED
+  CANCELLATION_LOOKUP
+  CANCELLATION_CONFIRMATION
+  CANCELLATION_COMPLETED
+  RESCHEDULE_LOOKUP
+  RESCHEDULE_DATE_TIME
+  RESCHEDULE_SLOT_CONFIRMATION
+  RESCHEDULE_COMPLETED
+  TRANSFER_TO_HUMAN
+  FALLBACK
+  END
+}
+
+enum ConversationIntent {
+  BOOK_APPOINTMENT
+  CANCEL_APPOINTMENT
+  RESCHEDULE_APPOINTMENT
+  TALK_TO_HUMAN
+  UNKNOWN
+}
+
+enum FeatureKey {
+  MANUAL_BOOKING
+  AI_RECEPTIONIST
+  VOICE
+  SMS
+  WHATSAPP
+  INSTAGRAM
+  REMINDERS
+  CALL_RECORDING
+  CALL_TRANSCRIPTS
+  ANALYTICS
 }
 
 enum CallOutcome {
@@ -53,6 +119,7 @@ model Salon {
   id                       String            @id @default(cuid())
   name                     String
   phone                    String
+  city                     String?
   timezone                 String
   isActive                 Boolean           @default(true) @map("is_active")
   receptionistName         String?           @map("receptionist_name")
@@ -73,21 +140,37 @@ model Salon {
   appointments             Appointment[]
   callLogs                 CallLog[]
   smsLogs                  SmsLog[]
+  features                 SalonFeature[]
+  toolExecutionLogs        ToolExecutionLog[]
+  conversationSessions     ConversationSession[]
 
   @@map("salons")
 }
 
+model SalonFeature {
+  id         String     @id @default(cuid())
+  salonId    String     @map("salon_id")
+  featureKey FeatureKey @map("feature_key")
+  enabled    Boolean    @default(false)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  salon      Salon      @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@unique([salonId, featureKey])
+  @@index([salonId])
+  @@map("salon_features")
+}
+
 model User {
   id           String   @id @default(cuid())
-  salonId      String   @map("salon_id")
-  email        String
+  salonId      String?  @map("salon_id")
+  email        String   @unique
   passwordHash String   @map("password_hash")
-  role         UserRole @default(OWNER)
+  role         UserRole @default(SALON_OWNER)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
-  salon        Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  salon        Salon?   @relation(fields: [salonId], references: [id], onDelete: Cascade)
 
-  @@unique([salonId, email])
   @@index([salonId])
   @@map("users")
 }
@@ -241,4 +324,64 @@ model SmsLog {
   @@index([customerId])
   @@index([appointmentId])
   @@map("sms_logs")
+}
+
+model ToolExecutionLog {
+  id           String              @id @default(cuid())
+  salonId      String              @map("salon_id")
+  channel      ConversationChannel
+  toolName     String              @map("tool_name")
+  inputJson    Json                @map("input_json")
+  outputJson   Json?               @map("output_json")
+  success      Boolean
+  errorCode    String?             @map("error_code")
+  errorMessage String?             @map("error_message")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  salon        Salon               @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@index([salonId])
+  @@index([channel])
+  @@index([toolName])
+  @@index([createdAt])
+  @@map("tool_execution_logs")
+}
+
+model ConversationSession {
+  id                   String                    @id @default(cuid())
+  salonId              String                    @map("salon_id")
+  channel              ConversationChannel
+  customerPhone        String?                   @map("customer_phone")
+  status               ConversationSessionStatus @default(ACTIVE)
+  currentState         ConversationState         @default(START) @map("current_state")
+  collectedData        Json                      @default("{}") @map("collected_data")
+  lastUserMessage      String?                   @map("last_user_message")
+  lastAssistantMessage String?                   @map("last_assistant_message")
+  startedAt            DateTime                  @default(now()) @map("started_at")
+  endedAt              DateTime?                 @map("ended_at")
+  createdAt            DateTime                  @default(now()) @map("created_at")
+  updatedAt            DateTime                  @updatedAt @map("updated_at")
+  salon                Salon                     @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  messages             ConversationMessage[]
+
+  @@index([salonId])
+  @@index([channel])
+  @@index([status])
+  @@index([currentState])
+  @@index([createdAt])
+  @@map("conversation_sessions")
+}
+
+model ConversationMessage {
+  id        String                  @id @default(cuid())
+  sessionId String                  @map("session_id")
+  role      ConversationMessageRole
+  content   String
+  metadata  Json?
+  createdAt DateTime                @default(now()) @map("created_at")
+  session   ConversationSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([role])
+  @@index([createdAt])
+  @@map("conversation_messages")
 }

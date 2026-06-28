@@ -18,9 +18,8 @@ import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { QuickActionCard } from '../components/QuickActionCard';
 import { SectionHeader } from '../components/SectionHeader';
 import { StatCard } from '../components/StatCard';
+import { useI18n } from '../i18n';
 import { theme } from '../theme/theme';
-import { formatTime } from '../utils/date';
-import { errorMessage } from '../utils/formatting';
 
 type TodayScreenProps = {
   api: ApiClient;
@@ -39,6 +38,7 @@ export function TodayScreen({
   onOpenTimeBlocks,
   onOpenAppointment,
 }: TodayScreenProps) {
+  const { callOutcomeLabel, formatTime, mapError, t } = useI18n();
   const [summary, setSummary] = useState<TodaySummary | null>(null);
   const [calls, setCalls] = useState<RecentCall[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ export function TodayScreen({
       setSummary(todayResponse);
       setCalls(callsResponse);
     } catch (loadError) {
-      setError(errorMessage(loadError));
+      setError(mapError(loadError));
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ export function TodayScreen({
           salonName={salon.name}
           userEmail={user.email}
         />
-        <LoadingState message="Loading today..." />
+        <LoadingState message={t('today.loading')} />
       </AppScreen>
     );
   }
@@ -89,7 +89,7 @@ export function TodayScreen({
           salonName={salon.name}
           userEmail={user.email}
         />
-        <ErrorState message={error || 'Today could not be loaded'} onAction={loadToday} />
+        <ErrorState message={error || t('today.loadError')} onAction={loadToday} />
       </AppScreen>
     );
   }
@@ -109,35 +109,35 @@ export function TodayScreen({
       <NextAppointmentCard appointment={summary.nextAppointment} />
 
       <View style={styles.statsRow}>
-        <StatCard label="Booked" value={summary.stats.booked} />
-        <StatCard label="Completed" tone="success" value={summary.stats.completed} />
-        <StatCard label="Cancelled" tone="danger" value={summary.stats.cancelled} />
+        <StatCard label={t('today.booked')} value={summary.stats.booked} />
+        <StatCard label={t('today.completed')} tone="success" value={summary.stats.completed} />
+        <StatCard label={t('today.cancelled')} tone="danger" value={summary.stats.cancelled} />
       </View>
 
       <View style={styles.quickRow}>
         <QuickActionCard
           icon={Plus}
           onPress={onOpenAdd}
-          subtitle="Find a slot"
-          title="New Appointment"
+          subtitle={t('today.findSlot')}
+          title={t('today.newAppointment')}
         />
         <QuickActionCard
           icon={ShieldOff}
           onPress={onOpenTimeBlocks}
-          subtitle="Pause calendar"
-          title="Block Time"
+          subtitle={t('today.pauseCalendar')}
+          title={t('today.blockTime')}
         />
         <QuickActionCard
           icon={History}
-          subtitle="Coming soon"
-          title="Call History"
+          subtitle={t('common.comingSoon')}
+          title={t('today.callHistory')}
         />
       </View>
 
       <View style={styles.section}>
-        <SectionHeader title="Today timeline" />
+        <SectionHeader title={t('today.timeline')} />
         {bookedAppointments.length === 0 ? (
-          <EmptyState message="No booked appointments for today." />
+          <EmptyState message={t('today.noAppointments')} />
         ) : (
           <View style={styles.list}>
             {bookedAppointments.map((appointment) => (
@@ -152,18 +152,18 @@ export function TodayScreen({
       </View>
 
       <View style={styles.section}>
-        <SectionHeader title="Recent calls" />
+        <SectionHeader title={t('today.recentCalls')} />
         <Card>
           {calls.length === 0 ? (
-            <Text style={styles.muted}>No recent calls yet.</Text>
+            <Text style={styles.muted}>{t('today.noRecentCalls')}</Text>
           ) : (
             calls.map((call) => (
               <View key={call.id} style={styles.callRow}>
                 <Text style={styles.callPhone}>
-                  {call.customerPhone ?? 'Unknown caller'}
+                  {call.customerPhone ?? t('common.unknownCaller')}
                 </Text>
                 <Text style={styles.muted}>
-                  {call.outcome} · {formatTime(call.startedAt)}
+                  {callOutcomeLabel(call.outcome)}, {formatTime(call.startedAt)}
                 </Text>
               </View>
             ))
@@ -179,10 +179,12 @@ function NextAppointmentCard({
 }: {
   appointment: Appointment | null;
 }) {
+  const { formatTime, t } = useI18n();
+
   return (
     <Card>
       <View style={styles.nextHeader}>
-        <Text style={styles.cardLabel}>Next Appointment</Text>
+        <Text style={styles.cardLabel}>{t('today.nextAppointment')}</Text>
         <Clock color={theme.colors.primary} size={18} strokeWidth={2.4} />
       </View>
       {appointment ? (
@@ -190,11 +192,14 @@ function NextAppointmentCard({
           <Text style={styles.nextTime}>{formatTime(appointment.startAt)}</Text>
           <Text style={styles.nextCustomer}>{appointment.customerName}</Text>
           <Text style={styles.nextMeta}>
-            {appointment.serviceName} with {appointment.workerName}
+            {t('today.serviceWithWorker', {
+              service: appointment.serviceName,
+              worker: appointment.workerName,
+            })}
           </Text>
         </>
       ) : (
-        <Text style={styles.emptyNext}>No more appointments today</Text>
+        <Text style={styles.emptyNext}>{t('today.noMoreAppointments')}</Text>
       )}
     </Card>
   );

@@ -6,8 +6,9 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { SectionHeader } from '../components/SectionHeader';
+import { useI18n } from '../i18n';
 import { theme } from '../theme/theme';
-import { errorMessage, formatPhone } from '../utils/formatting';
+import { formatPhone } from '../utils/formatting';
 
 type CustomerDetailsScreenProps = {
   api: ApiClient;
@@ -20,6 +21,7 @@ export function CustomerDetailsScreen({
   customerId,
   onBack,
 }: CustomerDetailsScreenProps) {
+  const { mapError, t } = useI18n();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -31,7 +33,7 @@ export function CustomerDetailsScreen({
     try {
       setCustomer(await api.customer(customerId));
     } catch (loadError) {
-      setError(errorMessage(loadError));
+      setError(mapError(loadError));
     } finally {
       setLoading(false);
     }
@@ -43,9 +45,9 @@ export function CustomerDetailsScreen({
 
   return (
     <AppScreen>
-      <Button label="Back" onPress={onBack} variant="secondary" />
+      <Button label={t('common.back')} onPress={onBack} variant="secondary" />
       {loading ? (
-        <LoadingState message="Loading customer..." />
+        <LoadingState message={t('client.loading')} />
       ) : error ? (
         <ErrorState message={error} onAction={loadCustomer} />
       ) : customer ? (
@@ -55,16 +57,16 @@ export function CustomerDetailsScreen({
             <Text style={styles.subtitle}>{formatPhone(customer.phone)}</Text>
           </View>
           <Card>
-            <Text style={styles.label}>Visit count</Text>
+            <Text style={styles.label}>{t('client.visitCount')}</Text>
             <Text style={styles.value}>{customer.visitCount}</Text>
           </Card>
-          <SectionHeader title="Appointment history" />
+          <SectionHeader title={t('client.history')} />
           <Card>
-            <EmptyState message="Appointment history will appear here later." />
+            <EmptyState message={t('client.historyLater')} />
           </Card>
         </>
       ) : (
-        <EmptyState message="Customer not found." />
+        <EmptyState message={t('client.notFound')} />
       )}
     </AppScreen>
   );

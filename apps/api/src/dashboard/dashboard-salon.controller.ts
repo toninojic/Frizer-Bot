@@ -1,49 +1,52 @@
 import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
-import { AuthenticatedUser } from '../auth/auth.types';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserRole } from '@prisma/client';
+import { CurrentSalonId } from '../auth/decorators/current-salon-id.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { DashboardSalonService } from './dashboard-salon.service';
 import { UpdateDashboardSalonDto } from './dto/update-dashboard-salon.dto';
 import { UpdateSalonSettingsDto } from './dto/update-salon-settings.dto';
 
-@UseGuards(JwtAuthGuard)
+@Roles(UserRole.SALON_OWNER)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('dashboard')
 export class DashboardSalonController {
   constructor(private readonly dashboardSalonService: DashboardSalonService) {}
 
   @Get('salon')
-  findSalon(@CurrentUser() user: AuthenticatedUser) {
-    return this.dashboardSalonService.findSalon(user.salonId);
+  findSalon(@CurrentSalonId() salonId: string) {
+    return this.dashboardSalonService.findSalon(salonId);
   }
 
   @Patch('salon')
   updateSalon(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentSalonId() salonId: string,
     @Body() dto: UpdateDashboardSalonDto,
   ) {
-    return this.dashboardSalonService.updateSalon(user.salonId, dto);
+    return this.dashboardSalonService.updateSalon(salonId, dto);
   }
 
   @Get('salon-settings')
-  findSettings(@CurrentUser() user: AuthenticatedUser) {
-    return this.dashboardSalonService.findSettings(user.salonId);
+  findSettings(@CurrentSalonId() salonId: string) {
+    return this.dashboardSalonService.findSettings(salonId);
   }
 
   @Get('today')
-  findToday(@CurrentUser() user: AuthenticatedUser) {
-    return this.dashboardSalonService.findToday(user.salonId);
+  findToday(@CurrentSalonId() salonId: string) {
+    return this.dashboardSalonService.findToday(salonId);
   }
 
   @Get('calls/recent')
-  findRecentCalls(@CurrentUser() user: AuthenticatedUser) {
-    return this.dashboardSalonService.findRecentCalls(user.salonId);
+  findRecentCalls(@CurrentSalonId() salonId: string) {
+    return this.dashboardSalonService.findRecentCalls(salonId);
   }
 
   @Patch('salon-settings')
   updateSettings(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentSalonId() salonId: string,
     @Body() dto: UpdateSalonSettingsDto,
   ) {
-    return this.dashboardSalonService.updateSettings(user.salonId, dto);
+    return this.dashboardSalonService.updateSettings(salonId, dto);
   }
 }

@@ -8,14 +8,17 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { AuthenticatedUser } from '../auth/auth.types';
+import { UserRole } from '@prisma/client';
+import { CurrentSalonId } from '../auth/decorators/current-salon-id.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { BookingEngineService } from '../booking-engine/booking-engine.service';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 
-@UseGuards(JwtAuthGuard)
+@Roles(UserRole.SALON_OWNER)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('dashboard/appointments')
 export class AppointmentsController {
   constructor(
@@ -25,12 +28,12 @@ export class AppointmentsController {
 
   @Get()
   findAllForSalon(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentSalonId() salonId: string,
     @Query('date') date?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return this.appointmentsService.findAllForSalon(user.salonId, {
+    return this.appointmentsService.findAllForSalon(salonId, {
       date,
       from,
       to,
@@ -39,24 +42,24 @@ export class AppointmentsController {
 
   @Get(':id')
   findOneForSalon(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentSalonId() salonId: string,
     @Param('id') id: string,
   ) {
-    return this.appointmentsService.findOneForSalon(user.salonId, id);
+    return this.appointmentsService.findOneForSalon(salonId, id);
   }
 
   @Post()
-  create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateAppointmentDto) {
+  create(@CurrentSalonId() salonId: string, @Body() dto: CreateAppointmentDto) {
     return this.bookingEngineService.createBooking({
       ...dto,
-      salonId: user.salonId,
+      salonId,
     });
   }
 
   @Patch(':id/cancel')
-  cancel(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+  cancel(@CurrentSalonId() salonId: string, @Param('id') id: string) {
     return this.bookingEngineService.cancelBooking({
-      salonId: user.salonId,
+      salonId,
       appointmentId: id,
     });
   }

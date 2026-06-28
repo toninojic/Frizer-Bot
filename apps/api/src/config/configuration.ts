@@ -10,4 +10,7 @@ export default () => ({
     secret: process.env.JWT_SECRET ?? '',
     expiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   },
+  internalTools: {
+    apiKey: process.env.INTERNAL_TOOLS_API_KEY ?? '',
+  },
 });

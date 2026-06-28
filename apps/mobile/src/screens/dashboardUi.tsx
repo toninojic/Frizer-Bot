@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react';
 import {
   Pressable,
-  SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TextInputProps,
   View,
 } from 'react-native';
+import { AppScreen } from '../components/AppScreen';
 import { theme } from '../theme/theme';
+import { useI18n } from '../i18n';
 
 type DashboardLayoutProps = {
   title: string;
@@ -44,24 +44,21 @@ export function DashboardLayout({
   onBack,
   children,
 }: DashboardLayoutProps) {
+  const { t } = useI18n();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.title}>{title}</Text>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-          </View>
-          {onBack ? (
-            <DashboardButton label="Back" onPress={onBack} variant="secondary" />
-          ) : null}
+    <AppScreen contentContainerStyle={styles.content}>
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
-        {children}
-      </ScrollView>
-    </SafeAreaView>
+        {onBack ? (
+          <DashboardButton label={t('common.back')} onPress={onBack} variant="secondary" />
+        ) : null}
+      </View>
+      {children}
+    </AppScreen>
   );
 }
 
@@ -143,14 +140,8 @@ export const dashboardColors = {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   content: {
     gap: theme.spacing[4],
-    padding: theme.spacing[5],
-    paddingBottom: theme.spacing[8],
   },
   header: {
     alignItems: 'flex-start',

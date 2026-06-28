@@ -8,39 +8,42 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AuthenticatedUser } from '../auth/auth.types';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserRole } from '@prisma/client';
+import { CurrentSalonId } from '../auth/decorators/current-salon-id.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { SalonServicesService } from './services.service';
 
-@UseGuards(JwtAuthGuard)
+@Roles(UserRole.SALON_OWNER)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('dashboard/services')
 export class ServicesController {
   constructor(private readonly salonServicesService: SalonServicesService) {}
 
   @Get()
-  findAllForSalon(@CurrentUser() user: AuthenticatedUser) {
-    return this.salonServicesService.findAllForSalon(user.salonId);
+  findAllForSalon(@CurrentSalonId() salonId: string) {
+    return this.salonServicesService.findAllForSalon(salonId);
   }
 
   @Post()
-  create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateServiceDto) {
-    return this.salonServicesService.create(user.salonId, dto);
+  create(@CurrentSalonId() salonId: string, @Body() dto: CreateServiceDto) {
+    return this.salonServicesService.create(salonId, dto);
   }
 
   @Patch(':id')
   update(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentSalonId() salonId: string,
     @Param('id') id: string,
     @Body() dto: UpdateServiceDto,
   ) {
-    return this.salonServicesService.update(user.salonId, id, dto);
+    return this.salonServicesService.update(salonId, id, dto);
   }
 
   @Delete(':id')
-  remove(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.salonServicesService.remove(user.salonId, id);
+  remove(@CurrentSalonId() salonId: string, @Param('id') id: string) {
+    return this.salonServicesService.remove(salonId, id);
   }
 }

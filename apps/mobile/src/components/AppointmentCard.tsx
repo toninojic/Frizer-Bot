@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Appointment } from '../api/client';
+import { useI18n } from '../i18n';
 import { theme } from '../theme/theme';
-import { formatTime } from '../utils/date';
 import { StatusBadge } from './StatusBadge';
 
 type AppointmentCardProps = {
@@ -10,6 +10,8 @@ type AppointmentCardProps = {
 };
 
 export function AppointmentCard({ appointment, onPress }: AppointmentCardProps) {
+  const { formatTime, statusLabel } = useI18n();
+
   return (
     <Pressable onPress={onPress} style={styles.card}>
       <Text style={styles.time}>{formatTime(appointment.startAt)}</Text>
@@ -20,7 +22,7 @@ export function AppointmentCard({ appointment, onPress }: AppointmentCardProps) 
         </Text>
       </View>
       <StatusBadge
-        label={appointment.status}
+        label={statusLabel(appointment.status)}
         tone={appointment.status === 'CANCELLED' ? 'danger' : 'success'}
       />
     </Pressable>

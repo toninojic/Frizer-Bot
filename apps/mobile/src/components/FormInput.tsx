@@ -7,6 +7,7 @@ type FormInputProps = {
   onChangeText: (value: string) => void;
   placeholder?: string;
   keyboardType?: TextInputProps['keyboardType'];
+  autoCapitalize?: TextInputProps['autoCapitalize'];
   multiline?: boolean;
   secureTextEntry?: boolean;
 };
@@ -17,6 +18,7 @@ export function FormInput({
   onChangeText,
   placeholder,
   keyboardType,
+  autoCapitalize,
   multiline,
   secureTextEntry,
 }: FormInputProps) {
@@ -25,6 +27,7 @@ export function FormInput({
       <Text style={styles.label}>{label}</Text>
       <TextInput
         keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
         multiline={multiline}
         onChangeText={onChangeText}
         placeholder={placeholder}

@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import type { StringValue } from 'ms';
 import { PrismaService } from '../prisma/prisma.service';
@@ -33,6 +34,13 @@ export class AuthService {
 
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid email or password');
+    }
+
+    if (
+      (user.role === UserRole.PLATFORM_ADMIN && user.salonId !== null) ||
+      (user.role === UserRole.SALON_OWNER && user.salonId === null)
+    ) {
+      throw new UnauthorizedException('Invalid user role configuration');
     }
 
     const authUser: AuthenticatedUser = {

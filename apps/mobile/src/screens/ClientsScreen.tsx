@@ -9,8 +9,9 @@ import { Card } from '../components/Card';
 import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { FormInput } from '../components/FormInput';
 import { SectionHeader } from '../components/SectionHeader';
+import { useI18n } from '../i18n';
 import { theme } from '../theme/theme';
-import { errorMessage, formatPhone } from '../utils/formatting';
+import { formatPhone } from '../utils/formatting';
 
 type ClientsScreenProps = {
   api: ApiClient;
@@ -25,6 +26,7 @@ export function ClientsScreen({
   user,
   onOpenCustomer,
 }: ClientsScreenProps) {
+  const { mapError, t } = useI18n();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ export function ClientsScreen({
     try {
       setCustomers(await api.customers({ search }));
     } catch (loadError) {
-      setError(errorMessage(loadError));
+      setError(mapError(loadError));
     } finally {
       setLoading(false);
     }
@@ -66,24 +68,24 @@ export function ClientsScreen({
       />
 
       <View style={styles.titleBlock}>
-        <Text style={styles.screenTitle}>Clients</Text>
-        <Text style={styles.subtitle}>Search by name or phone.</Text>
+        <Text style={styles.screenTitle}>{t('clients.title')}</Text>
+        <Text style={styles.subtitle}>{t('clients.subtitle')}</Text>
       </View>
 
       <FormInput
-        label="Search"
+        label={t('common.search')}
         onChangeText={setSearch}
-        placeholder="Marko or +381"
+        placeholder={t('clients.placeholder')}
         value={search}
       />
 
-      <SectionHeader title="Customer list" />
+      <SectionHeader title={t('clients.list')} />
       {loading ? (
-        <LoadingState message="Loading clients..." />
+        <LoadingState message={t('clients.loading')} />
       ) : error ? (
         <ErrorState message={error} onAction={loadCustomers} />
       ) : customers.length === 0 ? (
-        <EmptyState message="No customers found." />
+        <EmptyState message={t('clients.empty')} />
       ) : (
         <View style={styles.list}>
           {customers.map((customer) => (
@@ -104,7 +106,7 @@ export function ClientsScreen({
                   </View>
                 </View>
                 <Text style={styles.visitText}>
-                  {customer.visitCount} visits
+                  {t('clients.visits', { count: customer.visitCount })}
                 </Text>
               </Card>
             </Pressable>

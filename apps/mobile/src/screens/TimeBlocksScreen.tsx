@@ -9,6 +9,7 @@ import {
   DashboardNotice,
   dashboardColors,
 } from './dashboardUi';
+import { useI18n } from '../i18n';
 
 type TimeBlocksScreenProps = {
   api: ApiClient;
@@ -27,6 +28,7 @@ const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
 export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
+  const { formatDate, formatTime, mapError, t } = useI18n();
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [form, setForm] = useState<TimeBlockForm>(defaultForm());
@@ -51,7 +53,7 @@ export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
       setTimeBlocks(blocksResponse);
       setWorkers(workersResponse);
     } catch (loadError) {
-      setError(errorMessage(loadError));
+      setError(mapError(loadError));
     } finally {
       setLoading(false);
     }
@@ -62,7 +64,7 @@ export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
   }, [api]);
 
   async function addTimeBlock() {
-    const payload = timeBlockPayload(form);
+    const payload = timeBlockPayload(form, t);
 
     if ('error' in payload) {
       setError(payload.error);
@@ -76,10 +78,10 @@ export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
     try {
       await api.createTimeBlock(payload);
       setForm(defaultForm());
-      setNotice('Time block saved');
+      setNotice(t('timeBlocks.saved'));
       await loadData(false);
     } catch (saveError) {
-      setError(errorMessage(saveError));
+      setError(mapError(saveError));
     } finally {
       setSaving(false);
     }
@@ -92,10 +94,10 @@ export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
 
     try {
       await api.deleteTimeBlock(timeBlock.id);
-      setNotice('Time block deleted');
+      setNotice(t('timeBlocks.deleted'));
       await loadData(false);
     } catch (deleteError) {
-      setError(errorMessage(deleteError));
+      setError(mapError(deleteError));
     } finally {
       setDeletingId(null);
     }
@@ -106,21 +108,21 @@ export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
   return (
     <DashboardLayout
       onBack={onBack}
-      subtitle="Block unavailable salon or worker time."
-      title="Blocked Time"
+      subtitle={t('timeBlocks.subtitle')}
+      title={t('timeBlocks.title')}
     >
       <DashboardCard>
         <DashboardField
-          label="Title"
+          label={t('timeBlocks.formTitle')}
           onChangeText={(title) => setForm({ ...form, title })}
           placeholder="Ana pause"
           value={form.title}
         />
 
-        <Text style={styles.label}>Applies to</Text>
+        <Text style={styles.label}>{t('timeBlocks.appliesTo')}</Text>
         <View style={styles.choiceRow}>
           <DashboardButton
-            label="Whole salon"
+            label={t('common.wholeSalon')}
             onPress={() => setForm({ ...form, workerId: '' })}
             variant={form.workerId === '' ? 'primary' : 'secondary'}
           />
@@ -135,7 +137,7 @@ export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
         </View>
 
         <DashboardField
-          label="Date"
+          label={t('timeBlocks.date')}
           onChangeText={(date) => setForm({ ...form, date })}
           placeholder="2026-06-25"
           value={form.date}
@@ -144,7 +146,7 @@ export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
         <View style={styles.timeRow}>
           <View style={styles.timeField}>
             <DashboardField
-              label="Start"
+              label={t('timeBlocks.start')}
               onChangeText={(startTime) => setForm({ ...form, startTime })}
               placeholder="13:00"
               value={form.startTime}
@@ -152,7 +154,7 @@ export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
           </View>
           <View style={styles.timeField}>
             <DashboardField
-              label="End"
+              label={t('timeBlocks.end')}
               onChangeText={(endTime) => setForm({ ...form, endTime })}
               placeholder="13:30"
               value={form.endTime}
@@ -162,7 +164,7 @@ export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
 
         <DashboardButton
           disabled={saving}
-          label={saving ? 'Saving...' : 'Add time block'}
+          label={saving ? t('common.saving') : t('timeBlocks.add')}
           onPress={addTimeBlock}
         />
       </DashboardCard>
@@ -173,7 +175,7 @@ export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
       {loading ? (
         <ActivityIndicator color={dashboardColors.primary} />
       ) : timeBlocks.length === 0 ? (
-        <DashboardNotice message="No upcoming time blocks" />
+        <DashboardNotice message={t('timeBlocks.empty')} />
       ) : (
         <View style={styles.list}>
           {timeBlocks.map((timeBlock) => (
@@ -182,17 +184,17 @@ export function TimeBlocksScreen({ api, onBack }: TimeBlocksScreenProps) {
                 <View style={styles.blockText}>
                   <Text style={styles.blockTitle}>{timeBlock.title}</Text>
                   <Text style={styles.blockMeta}>
-                    {timeBlock.workerName ?? 'Whole salon'}
+                    {timeBlock.workerName ?? t('common.wholeSalon')}
                   </Text>
                   <Text style={styles.blockMeta}>
-                    {formatRange(timeBlock.startAt, timeBlock.endAt)}
+                    {formatRange(timeBlock.startAt, timeBlock.endAt, formatDate, formatTime)}
                   </Text>
                 </View>
               </View>
 
               <DashboardButton
                 disabled={deletingId === timeBlock.id}
-                label={deletingId === timeBlock.id ? 'Deleting...' : 'Delete'}
+                label={deletingId === timeBlock.id ? t('common.deleting') : t('common.delete')}
                 onPress={() => deleteTimeBlock(timeBlock)}
                 variant="danger"
               />
@@ -214,7 +216,10 @@ function defaultForm(): TimeBlockForm {
   };
 }
 
-function timeBlockPayload(form: TimeBlockForm):
+function timeBlockPayload(
+  form: TimeBlockForm,
+  t: ReturnType<typeof useI18n>['t'],
+):
   | {
       title: string;
       workerId: string | null;
@@ -225,26 +230,26 @@ function timeBlockPayload(form: TimeBlockForm):
   const title = form.title.trim();
 
   if (!title) {
-    return { error: 'Title is required' };
+    return { error: t('timeBlocks.titleRequired') };
   }
 
   if (!datePattern.test(form.date)) {
-    return { error: 'Date must use YYYY-MM-DD format' };
+    return { error: t('common.invalidDate') };
   }
 
   if (!timePattern.test(form.startTime) || !timePattern.test(form.endTime)) {
-    return { error: 'Start and end must use HH:mm time' };
+    return { error: t('timeBlocks.timeInvalid') };
   }
 
   const startAt = new Date(`${form.date}T${form.startTime}:00`);
   const endAt = new Date(`${form.date}T${form.endTime}:00`);
 
   if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
-    return { error: 'Date and time must be valid' };
+    return { error: t('timeBlocks.dateTimeInvalid') };
   }
 
   if (endAt <= startAt) {
-    return { error: 'End time must be after start time' };
+    return { error: t('timeBlocks.endAfterStart') };
   }
 
   return {
@@ -263,22 +268,16 @@ function formatDateInput(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function formatRange(startAt: string, endAt: string) {
+function formatRange(
+  startAt: string,
+  endAt: string,
+  formatDate: (value: string | Date) => string,
+  formatTime: (value: string | Date) => string,
+) {
   const start = new Date(startAt);
   const end = new Date(endAt);
 
-  return `${start.toLocaleDateString()} ${formatTime(start)}-${formatTime(end)}`;
-}
-
-function formatTime(date: Date) {
-  return date.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Something went wrong';
+  return `${formatDate(start)} ${formatTime(start)}-${formatTime(end)}`;
 }
 
 const styles = StyleSheet.create({

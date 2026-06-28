@@ -1,30 +1,33 @@
 import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { AuthenticatedUser } from '../auth/auth.types';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserRole } from '@prisma/client';
+import { CurrentSalonId } from '../auth/decorators/current-salon-id.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateTimeBlockDto } from './dto/create-time-block.dto';
 import { TimeBlocksService } from './time-blocks.service';
 
-@UseGuards(JwtAuthGuard)
+@Roles(UserRole.SALON_OWNER)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('dashboard/time-blocks')
 export class TimeBlocksController {
   constructor(private readonly timeBlocksService: TimeBlocksService) {}
 
   @Get()
-  findUpcomingForSalon(@CurrentUser() user: AuthenticatedUser) {
-    return this.timeBlocksService.findUpcomingForSalon(user.salonId);
+  findUpcomingForSalon(@CurrentSalonId() salonId: string) {
+    return this.timeBlocksService.findUpcomingForSalon(salonId);
   }
 
   @Post()
   create(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentSalonId() salonId: string,
     @Body() dto: CreateTimeBlockDto,
   ) {
-    return this.timeBlocksService.create(user.salonId, dto);
+    return this.timeBlocksService.create(salonId, dto);
   }
 
   @Delete(':id')
-  remove(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.timeBlocksService.remove(user.salonId, id);
+  remove(@CurrentSalonId() salonId: string, @Param('id') id: string) {
+    return this.timeBlocksService.remove(salonId, id);
   }
 }
