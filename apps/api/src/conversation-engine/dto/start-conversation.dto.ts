@@ -13,4 +13,9 @@ export class StartConversationDto {
   @IsString()
   @Matches(/^\+?[0-9\s().-]{6,}$/)
   customerPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  twilioCallSid?: string;
 }

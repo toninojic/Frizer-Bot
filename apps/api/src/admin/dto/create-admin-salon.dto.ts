@@ -11,6 +11,11 @@ export class CreateAdminSalonDto {
 
   @IsOptional()
   @IsString()
+  @MinLength(3)
+  twilioPhoneNumber?: string;
+
+  @IsOptional()
+  @IsString()
   city?: string;
 
   @IsEmail()

@@ -35,6 +35,7 @@ type PlatformSalonDetailsScreenProps = {
 type SalonDraft = {
   name: string;
   phone: string;
+  twilioPhoneNumber: string;
   city: string;
   timezone: string;
   isActive: boolean;
@@ -103,6 +104,7 @@ export function PlatformSalonDetailsScreen({
       const updated = await api.updateAdminSalon(salonId, {
         name: draft.name.trim(),
         phone: draft.phone.trim(),
+        twilioPhoneNumber: draft.twilioPhoneNumber.trim() || null,
         city: draft.city.trim() || null,
         timezone: draft.timezone.trim(),
         isActive: draft.isActive,
@@ -205,6 +207,13 @@ export function PlatformSalonDetailsScreen({
                 label={t('settings.phone')}
                 onChangeText={(phone) => setDraft({ ...draft, phone })}
                 value={draft.phone}
+              />
+              <FormInput
+                label={t('platform.details.twilioPhoneNumber')}
+                onChangeText={(twilioPhoneNumber) =>
+                  setDraft({ ...draft, twilioPhoneNumber })
+                }
+                value={draft.twilioPhoneNumber}
               />
               <FormInput
                 label={t('platform.details.city')}
@@ -370,6 +379,7 @@ function toDraft(salon: PlatformSalonDetails): SalonDraft {
   return {
     name: salon.name,
     phone: salon.phone,
+    twilioPhoneNumber: salon.twilioPhoneNumber ?? '',
     city: salon.city ?? '',
     timezone: salon.timezone,
     isActive: salon.isActive,

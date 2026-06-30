@@ -84,6 +84,7 @@ export class AdminService {
           id: salon.id,
           name: salon.name,
           phone: salon.phone,
+          twilioPhoneNumber: salon.twilioPhoneNumber,
           city: salon.city,
           isActive: salon.isActive,
           receptionistEnabled: salon.receptionistEnabled,
@@ -156,6 +157,7 @@ export class AdminService {
       id: salon.id,
       name: salon.name,
       phone: salon.phone,
+      twilioPhoneNumber: salon.twilioPhoneNumber,
       city: salon.city,
       timezone: salon.timezone,
       isActive: salon.isActive,
@@ -199,7 +201,17 @@ export class AdminService {
     try {
       await this.prisma.salon.update({
         where: { id },
-        data: dto,
+        data: {
+          ...dto,
+          twilioPhoneNumber:
+            dto.twilioPhoneNumber === undefined
+              ? undefined
+              : dto.twilioPhoneNumber?.trim() || null,
+          transferPhone:
+            dto.transferPhone === undefined
+              ? undefined
+              : dto.transferPhone?.trim() || null,
+        },
       });
     } catch (error) {
       if (this.isKnownPrismaError(error, 'P2025')) {
@@ -223,11 +235,12 @@ export class AdminService {
           data: {
             name: dto.name.trim(),
             phone: dto.phone.trim(),
+            twilioPhoneNumber: dto.twilioPhoneNumber?.trim() || null,
             city: dto.city?.trim() || null,
             timezone,
             isActive: true,
             receptionistName: null,
-            receptionistEnabled: false,
+            receptionistEnabled: true,
             transferPhone: dto.phone.trim(),
             workingAfterHoursEnabled: false,
             smsConfirmationsEnabled: true,

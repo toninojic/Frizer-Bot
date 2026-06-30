@@ -119,11 +119,12 @@ model Salon {
   id                       String            @id @default(cuid())
   name                     String
   phone                    String
+  twilioPhoneNumber        String?           @unique @map("twilio_phone_number")
   city                     String?
   timezone                 String
   isActive                 Boolean           @default(true) @map("is_active")
   receptionistName         String?           @map("receptionist_name")
-  receptionistEnabled      Boolean           @default(false) @map("receptionist_enabled")
+  receptionistEnabled      Boolean           @default(true) @map("receptionist_enabled")
   welcomeMessage           String?           @map("welcome_message")
   transferPhone            String?           @map("transfer_phone")
   workingAfterHoursEnabled Boolean           @default(false) @map("working_after_hours_enabled")
@@ -293,6 +294,7 @@ model CallLog {
   id              String      @id @default(cuid())
   salonId         String      @map("salon_id")
   customerPhone   String?     @map("customer_phone")
+  twilioCallSid   String?     @unique @map("twilio_call_sid")
   startedAt       DateTime    @map("started_at")
   endedAt         DateTime?   @map("ended_at")
   durationSeconds Int?        @map("duration_seconds")
@@ -303,6 +305,7 @@ model CallLog {
   salon           Salon       @relation(fields: [salonId], references: [id], onDelete: Cascade)
 
   @@index([salonId])
+  @@index([startedAt])
   @@map("call_logs")
 }
 
@@ -351,6 +354,7 @@ model ConversationSession {
   salonId              String                    @map("salon_id")
   channel              ConversationChannel
   customerPhone        String?                   @map("customer_phone")
+  twilioCallSid        String?                   @unique @map("twilio_call_sid")
   status               ConversationSessionStatus @default(ACTIVE)
   currentState         ConversationState         @default(START) @map("current_state")
   collectedData        Json                      @default("{}") @map("collected_data")

@@ -42,6 +42,11 @@ export class DashboardSalonController {
     return this.dashboardSalonService.findRecentCalls(salonId);
   }
 
+  @Get('calls')
+  findCalls(@CurrentSalonId() salonId: string) {
+    return this.dashboardSalonService.findCalls(salonId);
+  }
+
   @Patch('salon-settings')
   updateSettings(
     @CurrentSalonId() salonId: string,

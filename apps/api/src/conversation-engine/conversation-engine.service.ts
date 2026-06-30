@@ -63,6 +63,7 @@ export class ConversationEngineService {
       salonId: input.salonId,
       channel: input.channel,
       customerPhone: input.customerPhone,
+      twilioCallSid: input.twilioCallSid,
       currentState: ConversationState.GREETING,
       collectedData: {
         customerPhone: input.customerPhone,

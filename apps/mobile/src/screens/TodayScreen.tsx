@@ -165,6 +165,23 @@ export function TodayScreen({
                 <Text style={styles.muted}>
                   {callOutcomeLabel(call.outcome)}, {formatTime(call.startedAt)}
                 </Text>
+                {call.durationSeconds !== null ? (
+                  <Text style={styles.muted}>
+                    {t('today.callDuration', {
+                      seconds: String(call.durationSeconds),
+                    })}
+                  </Text>
+                ) : null}
+                {call.transcript ? (
+                  <Text numberOfLines={2} style={styles.muted}>
+                    {t('today.callTranscript')}: {call.transcript}
+                  </Text>
+                ) : null}
+                {call.recordingUrl ? (
+                  <Text numberOfLines={1} style={styles.muted}>
+                    {t('today.callRecording')}: {call.recordingUrl}
+                  </Text>
+                ) : null}
               </View>
             ))
           )}

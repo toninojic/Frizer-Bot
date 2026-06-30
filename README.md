@@ -358,6 +358,20 @@ Full maintenance docs live in [docs/conversation-engine.md](docs/conversation-en
 
 OpenAI Realtime, Twilio live audio, WhatsApp provider, Instagram provider, SMS provider, and production call transfer are intentionally not implemented yet.
 
+## Twilio Voice
+
+Twilio Voice webhooks are available for local MVP testing:
+
+```text
+POST /webhooks/twilio/voice
+POST /webhooks/twilio/gather
+POST /webhooks/twilio/status
+```
+
+The Twilio adapter identifies the salon by `salon.twilioPhoneNumber`, starts a `PHONE` Conversation Engine session, returns TwiML `<Gather>` responses, logs calls to `call_logs`, and updates dashboard call history.
+
+Exact Twilio account setup, ngrok testing, webhook URLs, and common fixes are documented in [docs/twilio-setup.md](docs/twilio-setup.md).
+
 Quick login test:
 
 ```bash

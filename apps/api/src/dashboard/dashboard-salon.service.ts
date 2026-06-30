@@ -41,9 +41,12 @@ type AppointmentRecord = {
 type CallLogRecord = {
   id: string;
   customerPhone: string | null;
+  twilioCallSid: string | null;
   startedAt: Date;
   endedAt: Date | null;
   durationSeconds: number | null;
+  transcript: string | null;
+  recordingUrl: string | null;
   outcome: CallOutcome;
 };
 
@@ -142,6 +145,10 @@ export class DashboardSalonService {
   }
 
   async findRecentCalls(salonId: string) {
+    return this.findCalls(salonId, 3);
+  }
+
+  async findCalls(salonId: string, take = 50) {
     const callLogs = await this.prisma.callLog.findMany({
       where: {
         salonId,
@@ -149,7 +156,7 @@ export class DashboardSalonService {
       orderBy: {
         startedAt: 'desc',
       },
-      take: 3,
+      take,
     });
 
     return callLogs.map((callLog) => this.toCallLogResponse(callLog));
@@ -199,9 +206,12 @@ export class DashboardSalonService {
     return {
       id: callLog.id,
       customerPhone: callLog.customerPhone,
+      twilioCallSid: callLog.twilioCallSid,
       startedAt: callLog.startedAt.toISOString(),
       endedAt: callLog.endedAt?.toISOString() ?? null,
       durationSeconds: callLog.durationSeconds,
+      transcript: callLog.transcript,
+      recordingUrl: callLog.recordingUrl,
       outcome: callLog.outcome,
     };
   }

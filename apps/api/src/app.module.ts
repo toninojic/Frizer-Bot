@@ -15,6 +15,7 @@ import { SalonsModule } from './salons/salons.module';
 import { SalonServicesModule } from './services/services.module';
 import { TimeBlocksModule } from './time-blocks/time-blocks.module';
 import { ToolLayerModule } from './tool-layer/tool-layer.module';
+import { TwilioModule } from './twilio/twilio.module';
 import { WorkersModule } from './workers/workers.module';
 import { WorkingHoursModule } from './working-hours/working-hours.module';
 
@@ -40,6 +41,7 @@ import { WorkingHoursModule } from './working-hours/working-hours.module';
     AppointmentsModule,
     ToolLayerModule,
     ConversationEngineModule,
+    TwilioModule,
   ],
 })
 export class AppModule {}

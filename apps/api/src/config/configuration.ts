@@ -13,4 +13,10 @@ export default () => ({
   internalTools: {
     apiKey: process.env.INTERNAL_TOOLS_API_KEY ?? '',
   },
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID ?? '',
+    authToken: process.env.TWILIO_AUTH_TOKEN ?? '',
+    phoneNumber: process.env.TWILIO_PHONE_NUMBER ?? '',
+    validateSignature: process.env.TWILIO_VALIDATE_SIGNATURE === 'true',
+  },
 });

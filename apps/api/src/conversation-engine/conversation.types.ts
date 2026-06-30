@@ -65,6 +65,7 @@ export type ConversationSessionView = {
   salonId: string;
   channel: ConversationChannel;
   customerPhone: string | null;
+  twilioCallSid: string | null;
   status: ConversationSessionStatus;
   currentState: ConversationState;
   collectedData: ConversationCollectedData;

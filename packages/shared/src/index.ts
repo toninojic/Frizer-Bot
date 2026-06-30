@@ -168,6 +168,18 @@ export type DashboardAppointment = {
   notes: string | null;
 };
 
+export type DashboardCallLog = {
+  id: string;
+  customerPhone: string | null;
+  twilioCallSid: string | null;
+  startedAt: string;
+  endedAt: string | null;
+  durationSeconds: number | null;
+  transcript: string | null;
+  recordingUrl: string | null;
+  outcome: 'BOOKED' | 'CANCELLED' | 'TRANSFERRED' | 'FAILED' | 'INFO_ONLY';
+};
+
 export type BookingAvailableSlot = {
   workerId: string;
   workerName: string;

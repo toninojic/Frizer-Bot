@@ -6,6 +6,7 @@
     "build": "nest build",
     "test:booking-engine": "node --test -r ts-node/register test/booking-engine.service.spec.ts",
     "test:conversation-engine": "node --test -r ts-node/register test/conversation-engine.service.spec.ts",
+    "test:twilio": "node --test -r ts-node/register test/twilio.service.spec.ts",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
@@ -32,7 +33,8 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "twilio": "^6.0.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.23",

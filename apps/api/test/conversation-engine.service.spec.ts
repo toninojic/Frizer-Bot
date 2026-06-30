@@ -25,6 +25,7 @@ class FakeConversationSessionService {
     salonId: string;
     channel: ConversationChannel;
     customerPhone?: string;
+    twilioCallSid?: string;
     currentState: ConversationState;
     collectedData: ConversationSessionView['collectedData'];
     assistantMessage?: string;
@@ -35,6 +36,7 @@ class FakeConversationSessionService {
       salonId: input.salonId,
       channel: input.channel,
       customerPhone: input.customerPhone ?? null,
+      twilioCallSid: input.twilioCallSid ?? null,
       status: ConversationSessionStatus.ACTIVE,
       currentState: input.currentState,
       collectedData: input.collectedData,

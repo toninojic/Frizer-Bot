@@ -20,6 +20,7 @@ export class ConversationSessionService {
     salonId: string;
     channel: ConversationChannel;
     customerPhone?: string;
+    twilioCallSid?: string;
     currentState: ConversationState;
     collectedData: ConversationCollectedData;
     assistantMessage?: string;
@@ -29,6 +30,7 @@ export class ConversationSessionService {
         salonId: input.salonId,
         channel: input.channel,
         customerPhone: input.customerPhone,
+        twilioCallSid: input.twilioCallSid,
         currentState: input.currentState,
         collectedData: this.toJson(input.collectedData),
         lastAssistantMessage: input.assistantMessage,
@@ -109,8 +111,9 @@ export class ConversationSessionService {
     id: string;
     salonId: string;
     channel: ConversationChannel;
-    customerPhone: string | null;
-    status: ConversationSessionStatus;
+      customerPhone: string | null;
+      twilioCallSid: string | null;
+      status: ConversationSessionStatus;
     currentState: ConversationState;
     collectedData: Prisma.JsonValue;
     lastUserMessage: string | null;

@@ -29,6 +29,7 @@ async function upsertDemoSalon() {
       data: {
         name: 'Salon Ana',
         phone: salonPhone,
+        twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER || null,
         city: 'Nis',
         timezone: 'Europe/Belgrade',
         isActive: true,
@@ -47,6 +48,7 @@ async function upsertDemoSalon() {
     data: {
       name: 'Salon Ana',
       phone: salonPhone,
+      twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER || null,
       city: 'Nis',
       timezone: 'Europe/Belgrade',
       isActive: true,

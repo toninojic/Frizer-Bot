@@ -149,9 +149,12 @@ export type TodaySummary = {
 export type RecentCall = {
   id: string;
   customerPhone: string | null;
+  twilioCallSid: string | null;
   startedAt: string;
   endedAt: string | null;
   durationSeconds: number | null;
+  transcript: string | null;
+  recordingUrl: string | null;
   outcome: string;
 };
 
@@ -167,6 +170,7 @@ export type PlatformSalonSummary = {
   id: string;
   name: string;
   phone: string;
+  twilioPhoneNumber: string | null;
   city: string | null;
   isActive: boolean;
   receptionistEnabled: boolean;
@@ -181,6 +185,7 @@ export type PlatformSalonDetails = {
   id: string;
   name: string;
   phone: string;
+  twilioPhoneNumber: string | null;
   city: string | null;
   timezone: string;
   isActive: boolean;
@@ -217,6 +222,7 @@ export type UpdatePlatformSalonInput = Partial<
     PlatformSalonDetails,
     | 'name'
     | 'phone'
+    | 'twilioPhoneNumber'
     | 'city'
     | 'timezone'
     | 'isActive'
@@ -311,6 +317,9 @@ export function createApiClient(options: ApiClientOptions) {
     },
     recentCalls() {
       return request<RecentCall[]>('/dashboard/calls/recent');
+    },
+    calls() {
+      return request<RecentCall[]>('/dashboard/calls');
     },
     dashboardFeatures() {
       return request<SalonFeature[]>('/dashboard/features');

@@ -21,6 +21,11 @@ export class UpdateAdminSalonDto {
 
   @IsOptional()
   @IsString()
+  @MinLength(3)
+  twilioPhoneNumber?: string | null;
+
+  @IsOptional()
+  @IsString()
   city?: string | null;
 
   @IsOptional()
